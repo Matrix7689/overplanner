@@ -57,7 +57,8 @@ export function DashboardPage() {
 
       <section>
         <h2 className="mb-3 text-sm font-medium text-stone-500">Categories</h2>
-        <div className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 md:-mx-8 md:scroll-px-8 md:px-8">
+        {/* Masonry like Google Keep: columns fill the width, cards stack down. */}
+        <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5">
           {categories
             .filter((c) => c.parent === null)
             .map((c) => (
@@ -74,7 +75,7 @@ function Swimlane({ category, items }: { category: CategoryDef; items: Item[] })
   const more = items.length - shown.length;
 
   return (
-    <div className="flex w-72 shrink-0 snap-start flex-col rounded-xl border border-stone-200 bg-white">
+    <div className="mb-4 flex break-inside-avoid flex-col overflow-hidden rounded-xl border border-stone-200 bg-white">
       <Link
         to={`/category/${category.slug}`}
         className="flex items-center gap-2 border-b border-stone-100 px-4 py-3 hover:bg-stone-50"
