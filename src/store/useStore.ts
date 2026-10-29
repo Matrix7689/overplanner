@@ -9,6 +9,7 @@ import type {
   ItemStatus,
   Settings,
   SettingsPatch,
+  SidebarSection,
   Theme,
   UpdateItemInput,
 } from "../../shared/types";
@@ -41,6 +42,8 @@ type State = {
   setCategories: (id: string, categories: string[]) => Promise<void>;
   updateSettings: (patch: SettingsPatch) => void;
   setTheme: (theme: Theme) => void;
+  toggleSidebar: () => void;
+  toggleSection: (section: SidebarSection) => void;
 };
 
 const LOAD_ATTEMPTS = 5;
@@ -98,6 +101,16 @@ export const useStore = create<State>()((set, get) => {
     // Applies at once (useThemeSync reacts to the store) and saves to
     // settings.json under ui.theme.
     setTheme: (theme) => get().updateSettings({ ui: { theme } }),
+
+    // Sidebar layout is saved with the other UI preferences.
+    toggleSidebar: () => get().updateSettings({ ui: { sidebarCollapsed: !get().settings.ui.sidebarCollapsed } }),
+
+    toggleSection: (section) => {
+      const folded = get().settings.ui.collapsedSections;
+      get().updateSettings({
+        ui: { collapsedSections: folded.includes(section) ? folded.filter((s) => s !== section) : [...folded, section] },
+      });
+    },
 
     refreshBackup: async () => {
       try {
@@ -164,7 +177,10 @@ export const useStore = create<State>()((set, get) => {
     // slider doesn't write settings.json on every step.
     updateSettings: (patch) => {
       set((s) => ({ settings: { ...s.settings, ...patch, ui: { ...s.settings.ui, ...patch.ui } } }));
-      pendingSettings = { ...pendingSettings, ...patch, ui: { ...pendingSettings.ui, ...patch.ui } };
+      // Merge `ui` key by key so two quick changes (say, fold a section then
+      // collapse the sidebar) are saved together.
+      pendingSettings = { ...pendingSettings, ...patch, ui: patch.ui ? { ...pendingSettings.ui, ...patch.ui } : pendingSettings.ui };
+      if (!pendingSettings.ui) delete pendingSettings.ui;
       clearTimeout(settingsTimer);
       settingsTimer = setTimeout(async () => {
         const toSave = pendingSettings;

@@ -15,6 +15,7 @@ import type {
   ItemStatusSchema,
   SettingsPatchSchema,
   SettingsSchema,
+  SidebarSectionSchema,
   ThemeSchema,
   UpdateItemSchema,
 } from "./schemas";
@@ -76,6 +77,7 @@ export type BackupStatus = BackupState & {
 };
 
 export type Theme = z.infer<typeof ThemeSchema>;
+export type SidebarSection = z.infer<typeof SidebarSectionSchema>;
 export type Settings = z.infer<typeof SettingsSchema>;
 export type SettingsPatch = z.input<typeof SettingsPatchSchema>;
 
@@ -84,7 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maybeThreshold: 0.4,
   backupPath: "",
   backupKeep: 28, // one week of 6-hourly backups
-  ui: { theme: "system" },
+  ui: { theme: "system", sidebarCollapsed: false, collapsedSections: [] },
 };
 
 // Deleted items are purged this many days after deletedAt.

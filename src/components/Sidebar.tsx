@@ -1,9 +1,14 @@
 import {
   CalendarDays,
+  ChevronDown,
   Code2,
   Inbox,
   LayoutDashboard,
+  LayoutGrid,
+  ListChecks,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Search,
   Settings,
   Sun,
@@ -11,9 +16,9 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router";
-import type { CategoryDef } from "../../shared/types";
+import type { CategoryDef, SidebarSection } from "../../shared/types";
 import { resolveTheme } from "../lib/theme";
 import { inboxItems, openCountBySlug, useStore } from "../store/useStore";
 
@@ -22,9 +27,15 @@ type Props = {
   onClose: () => void;
 };
 
+// "Compact" is the icons-only desktop sidebar. The phone drawer ignores it,
+// which is why every compact style below uses the md: prefix.
 export function Sidebar({ open, onClose }: Props) {
   const categories = useStore((s) => s.categories);
   const items = useStore((s) => s.items);
+  const compact = useStore((s) => s.settings.ui.sidebarCollapsed);
+  const folded = useStore((s) => s.settings.ui.collapsedSections);
+  const toggleSidebar = useStore((s) => s.toggleSidebar);
+  const toggleSection = useStore((s) => s.toggleSection);
 
   const counts = useMemo(() => openCountBySlug(items), [items]);
   const inboxCount = useMemo(() => inboxItems(items).length, [items]);
@@ -45,14 +56,23 @@ export function Sidebar({ open, onClose }: Props) {
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-stone-200 bg-white transition-transform md:static md:w-64 md:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-stone-200 bg-white transition-transform md:static md:translate-x-0 ${
+          compact ? "md:w-14" : "md:w-64"
+        } ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <NavLink to="/" className="text-lg font-semibold tracking-tight">
+        <div className={`flex items-center justify-between px-5 pt-5 pb-3 ${compact ? "md:justify-center md:px-0" : ""}`}>
+          <NavLink to="/" className={`text-lg font-semibold tracking-tight ${compact ? "md:hidden" : ""}`}>
             Overplanner
           </NavLink>
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="hidden rounded-md p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-800 md:block"
+            aria-label={compact ? "Expand sidebar" : "Collapse sidebar"}
+            title={compact ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {compact ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+          </button>
           <button
             type="button"
             onClick={onClose}
@@ -63,49 +83,47 @@ export function Sidebar({ open, onClose }: Props) {
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 pb-4">
-          <SearchBox />
+        <nav className={`flex-1 overflow-x-hidden overflow-y-auto px-3 pb-4 ${compact ? "md:px-2" : ""}`}>
+          <SearchBox compact={compact} />
           <ul className="space-y-0.5">
-            <MainLink to="/" icon={LayoutDashboard} label="Dashboard" end />
-            <MainLink to="/inbox" icon={Inbox} label="Inbox" count={inboxCount} />
-            <MainLink to="/calendar" icon={CalendarDays} label="Calendar" />
-            <MainLink to="/results" icon={TrendingUp} label="Results" />
+            <MainLink to="/" icon={LayoutDashboard} label="Dashboard" compact={compact} end />
+            <MainLink to="/inbox" icon={Inbox} label="Inbox" count={inboxCount} compact={compact} />
+            <MainLink to="/calendar" icon={CalendarDays} label="Calendar" compact={compact} />
+            <MainLink to="/results" icon={TrendingUp} label="Results" compact={compact} />
           </ul>
 
-          <SectionHeading>Categories</SectionHeading>
-          <ul className="space-y-0.5">
+          <Section title="Categories" id="categories" icon={LayoutGrid} folded={folded.includes("categories")} onToggle={toggleSection} compact={compact}>
             {topCategories.map((c) => (
               <li key={c.slug}>
-                <CategoryLink category={c} count={counts[c.slug]} />
+                <CategoryLink category={c} count={counts[c.slug]} compact={compact} />
                 {childrenOf(c.slug).length > 0 && (
-                  <ul className="ml-4 space-y-0.5">
+                  <ul className={`ml-4 space-y-0.5 ${compact ? "md:ml-0" : ""}`}>
                     {childrenOf(c.slug).map((child) => (
                       <li key={child.slug}>
-                        <CategoryLink category={child} count={counts[child.slug]} />
+                        <CategoryLink category={child} count={counts[child.slug]} compact={compact} />
                       </li>
                     ))}
                   </ul>
                 )}
               </li>
             ))}
-          </ul>
+          </Section>
 
-          <SectionHeading>Lists</SectionHeading>
-          <ul className="space-y-0.5">
+          <Section title="Lists" id="lists" icon={ListChecks} folded={folded.includes("lists")} onToggle={toggleSection} compact={compact}>
             {lists.map((c) => (
               <li key={c.slug}>
-                <CategoryLink category={c} count={counts[c.slug]} />
+                <CategoryLink category={c} count={counts[c.slug]} compact={compact} />
               </li>
             ))}
-          </ul>
+          </Section>
         </nav>
 
-        <div className="border-t border-stone-200 px-3 py-3">
+        <div className={`border-t border-stone-200 px-3 py-3 ${compact ? "md:px-2" : ""}`}>
           <ul className="space-y-0.5">
-            <MainLink to="/dev" icon={Code2} label="Dev" />
-            <MainLink to="/settings" icon={Settings} label="Settings" />
+            <MainLink to="/dev" icon={Code2} label="Dev" compact={compact} />
+            <MainLink to="/settings" icon={Settings} label="Settings" compact={compact} />
             <li>
-              <ThemeToggle />
+              <ThemeToggle compact={compact} />
             </li>
           </ul>
         </div>
@@ -114,26 +132,74 @@ export function Sidebar({ open, onClose }: Props) {
   );
 }
 
+// A foldable group of links. In the icons-only sidebar the heading shrinks to
+// its icon, which still folds and unfolds the section, and a folded section
+// stays folded.
+function Section({
+  title,
+  id,
+  icon: Icon,
+  folded,
+  onToggle,
+  compact,
+  children,
+}: {
+  title: string;
+  id: SidebarSection;
+  icon: LucideIcon;
+  folded: boolean;
+  onToggle: (id: SidebarSection) => void;
+  compact: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section className={compact ? "md:mt-3 md:border-t md:border-stone-200 md:pt-3" : ""}>
+      <h2 className={`mt-6 mb-1 ${compact ? "md:mt-0" : ""}`}>
+        <button
+          type="button"
+          onClick={() => onToggle(id)}
+          aria-expanded={!folded}
+          title={compact ? `${folded ? "Show" : "Hide"} ${title.toLowerCase()}` : undefined}
+          aria-label={title}
+          className={`flex w-full items-center gap-3 rounded-md px-3 py-0.5 text-xs font-medium tracking-wide uppercase hover:text-stone-700 ${
+            compact ? "md:justify-center md:px-0 md:py-1.5" : ""
+          } ${folded && compact ? "text-stone-300" : "text-stone-400"}`}
+        >
+          <Icon className="size-4 shrink-0" />
+          <span className={`flex-1 text-left ${compact ? "md:hidden" : ""}`}>{title}</span>
+          <ChevronDown className={`size-3.5 transition-transform ${folded ? "-rotate-90" : ""} ${compact ? "md:hidden" : ""}`} />
+        </button>
+      </h2>
+      <ul className={`space-y-0.5 ${folded ? "hidden" : ""}`}>{children}</ul>
+    </section>
+  );
+}
+
 // Flips between light and dark; the "System" choice lives in Settings.
-function ThemeToggle() {
+function ThemeToggle({ compact }: { compact: boolean }) {
   const theme = useStore((s) => s.settings.ui.theme);
   const setTheme = useStore((s) => s.setTheme);
   const isDark = resolveTheme(theme) === "dark";
   const Icon = isDark ? Sun : Moon;
+  const label = isDark ? "Light mode" : "Dark mode";
 
   return (
     <button
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="flex w-full items-center gap-3 rounded-md px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+      title={compact ? label : undefined}
+      aria-label={label}
+      className={`flex w-full items-center gap-3 rounded-md px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 ${
+        compact ? "md:justify-center md:px-0" : ""
+      }`}
     >
       <Icon className="size-4 shrink-0" />
-      {isDark ? "Light mode" : "Dark mode"}
+      <span className={compact ? "md:hidden" : ""}>{label}</span>
     </button>
   );
 }
 
-function SearchBox() {
+function SearchBox({ compact }: { compact: boolean }) {
   const navigate = useNavigate();
   const [text, setText] = useState("");
 
@@ -145,32 +211,33 @@ function SearchBox() {
   };
 
   return (
-    <form onSubmit={submit} className="relative mb-3">
-      <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-stone-400" />
-      <input
-        type="search"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Search"
-        aria-label="Search"
-        className="w-full rounded-md border border-stone-200 bg-stone-50 py-1.5 pr-2 pl-8 text-sm outline-none placeholder:text-stone-400 focus:border-stone-400 focus:bg-white"
-      />
-    </form>
+    <>
+      <form onSubmit={submit} className={`relative mb-3 ${compact ? "md:hidden" : ""}`}>
+        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-stone-400" />
+        <input
+          type="search"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Search"
+          aria-label="Search"
+          className="w-full rounded-md border border-stone-200 bg-stone-50 py-1.5 pr-2 pl-8 text-sm outline-none placeholder:text-stone-400 focus:border-stone-400 focus:bg-white"
+        />
+      </form>
+      {compact && (
+        <ul className="mb-3 hidden space-y-0.5 md:block">
+          <MainLink to="/search" icon={Search} label="Search" compact />
+        </ul>
+      )}
+    </>
   );
 }
 
-function SectionHeading({ children }: { children: string }) {
-  return (
-    <h2 className="mt-6 mb-1 px-3 text-xs font-medium tracking-wide text-stone-400 uppercase">
-      {children}
-    </h2>
-  );
-}
-
-const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-3 rounded-md px-3 py-1.5 text-sm ${
-    isActive ? "bg-stone-100 font-medium text-stone-900" : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
-  }`;
+const linkClass =
+  (compact: boolean) =>
+  ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-3 rounded-md px-3 py-1.5 text-sm ${compact ? "md:justify-center md:px-0" : ""} ${
+      isActive ? "bg-stone-100 font-medium text-stone-900" : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+    }`;
 
 function MainLink({
   to,
@@ -178,36 +245,43 @@ function MainLink({
   label,
   count,
   end,
+  compact,
 }: {
   to: string;
   icon: LucideIcon;
   label: string;
   count?: number;
   end?: boolean;
+  compact: boolean;
 }) {
   return (
     <li>
-      <NavLink to={to} end={end} className={linkClass}>
+      <NavLink to={to} end={end} className={linkClass(compact)} title={compact ? label : undefined} aria-label={label}>
         <Icon className="size-4 shrink-0" />
-        <span className="flex-1">{label}</span>
-        {count ? <Count value={count} /> : null}
+        <span className={`flex-1 ${compact ? "md:hidden" : ""}`}>{label}</span>
+        {count ? <Count value={count} compact={compact} /> : null}
       </NavLink>
     </li>
   );
 }
 
-function CategoryLink({ category, count }: { category: CategoryDef; count?: number }) {
+function CategoryLink({ category, count, compact }: { category: CategoryDef; count?: number; compact: boolean }) {
   return (
-    <NavLink to={`/category/${category.slug}`} className={linkClass}>
+    <NavLink
+      to={`/category/${category.slug}`}
+      className={linkClass(compact)}
+      title={compact ? category.name : undefined}
+      aria-label={category.name}
+    >
       <span className="w-4 shrink-0 text-center" aria-hidden>
         {category.icon}
       </span>
-      <span className="flex-1 truncate">{category.name}</span>
-      {count ? <Count value={count} /> : null}
+      <span className={`flex-1 truncate ${compact ? "md:hidden" : ""}`}>{category.name}</span>
+      {count ? <Count value={count} compact={compact} /> : null}
     </NavLink>
   );
 }
 
-function Count({ value }: { value: number }) {
-  return <span className="text-xs tabular-nums text-stone-400">{value}</span>;
+function Count({ value, compact }: { value: number; compact: boolean }) {
+  return <span className={`text-xs tabular-nums text-stone-400 ${compact ? "md:hidden" : ""}`}>{value}</span>;
 }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 - 2026-10-29
+
+- Favicon: a calendar with a checkmark
+- Sidebar: icons for the Categories and Lists headings; in icons-only mode they stay clickable to fold or unfold
+- Fix: a folded section stayed folded when the sidebar collapsed, and saving one `ui` setting no longer resets the others (a settings patch was filling in defaults for keys it left out)
+- Dashboard: category cards in a Keep-style masonry grid (no horizontal scroll)
+- Sidebar: Categories and Lists sections fold; a toggle shrinks the sidebar to icons only (desktop)
+- Both sidebar choices are saved in `settings.json` under `ui`
+
 ## 0.5.0 - 2026-10-29
 
 - Dark mode: System, Light or Dark, chosen in Settings or with the sidebar toggle

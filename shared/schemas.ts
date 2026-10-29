@@ -134,8 +134,12 @@ export const BackupStateSchema = z.object({
 export const ThemeSchema = z.enum(["system", "light", "dark"]);
 
 // UI preferences stored in settings.json. Unknown keys are kept.
+export const SidebarSectionSchema = z.enum(["categories", "lists"]);
+
 const UiSchema = z.looseObject({
   theme: ThemeSchema.default("system"),
+  sidebarCollapsed: z.boolean().default(false), // icons only
+  collapsedSections: z.array(SidebarSectionSchema).default([]), // folded sidebar sections
 });
 
 const SettingsBaseSchema = z.object({
@@ -155,4 +159,12 @@ export const SettingsSchema = SettingsBaseSchema.refine((s) => s.maybeThreshold 
 export const SettingsFileSchema = SettingsBaseSchema.partial();
 
 // PATCH /api/settings
-export const SettingsPatchSchema = SettingsBaseSchema.strict().partial();
+// A patch must not fill in defaults for keys it leaves out (that would reset
+// them), so `ui` here has plain optional keys instead of UiSchema.
+const UiPatchSchema = z.looseObject({
+  theme: ThemeSchema.optional(),
+  sidebarCollapsed: z.boolean().optional(),
+  collapsedSections: z.array(SidebarSectionSchema).optional(),
+});
+
+export const SettingsPatchSchema = SettingsBaseSchema.omit({ ui: true }).extend({ ui: UiPatchSchema }).strict().partial();
