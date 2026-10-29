@@ -3,13 +3,14 @@ import {
   Code2,
   Inbox,
   LayoutDashboard,
+  Search,
   Settings,
   TrendingUp,
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useMemo } from "react";
-import { NavLink } from "react-router";
+import { useMemo, useState, type FormEvent } from "react";
+import { NavLink, useNavigate } from "react-router";
 import type { CategoryDef } from "../../shared/types";
 import { inboxItems, openCountBySlug, useStore } from "../store/useStore";
 
@@ -60,6 +61,7 @@ export function Sidebar({ open, onClose }: Props) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
+          <SearchBox />
           <ul className="space-y-0.5">
             <MainLink to="/" icon={LayoutDashboard} label="Dashboard" end />
             <MainLink to="/inbox" icon={Inbox} label="Inbox" count={inboxCount} />
@@ -103,6 +105,32 @@ export function Sidebar({ open, onClose }: Props) {
         </div>
       </aside>
     </>
+  );
+}
+
+function SearchBox() {
+  const navigate = useNavigate();
+  const [text, setText] = useState("");
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const q = text.trim();
+    navigate(q ? `/search?${new URLSearchParams({ q })}` : "/search");
+    setText("");
+  };
+
+  return (
+    <form onSubmit={submit} className="relative mb-3">
+      <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-stone-400" />
+      <input
+        type="search"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Search"
+        aria-label="Search"
+        className="w-full rounded-md border border-stone-200 bg-stone-50 py-1.5 pr-2 pl-8 text-sm outline-none placeholder:text-stone-400 focus:border-stone-400 focus:bg-white"
+      />
+    </form>
   );
 }
 

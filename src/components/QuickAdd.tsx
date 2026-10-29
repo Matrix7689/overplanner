@@ -15,12 +15,17 @@ type Props = {
 export function QuickAdd({ placeholder = "Add a task, note or link…", categories = [], kind, onAdded }: Props) {
   const addItem = useStore((s) => s.addItem);
   const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const title = text.trim();
-    if (!title) return;
-    addItem({ title, categories, kind });
+    if (!title || saving) return;
+    setSaving(true);
+    const item = await addItem({ title, categories, kind });
+    setSaving(false);
+    // On failure the text stays so nothing is lost; the store shows why.
+    if (!item) return;
     setText("");
     onAdded?.(title);
   };
@@ -35,7 +40,7 @@ export function QuickAdd({ placeholder = "Add a task, note or link…", categori
       />
       <button
         type="submit"
-        disabled={!text.trim()}
+        disabled={!text.trim() || saving}
         className="inline-flex items-center gap-1 rounded-lg bg-stone-900 px-3 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-40"
       >
         <Plus className="size-4" />

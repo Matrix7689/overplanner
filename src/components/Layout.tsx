@@ -1,6 +1,7 @@
-import { Menu } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Outlet, useLocation } from "react-router";
+import { Link, Outlet, useLocation } from "react-router";
+import { useStore } from "../store/useStore";
 import { Sidebar } from "./Sidebar";
 
 export function Layout() {
@@ -24,15 +25,60 @@ export function Layout() {
           >
             <Menu className="size-5" />
           </button>
-          <span className="font-semibold tracking-tight">Overplanner</span>
+          <span className="flex-1 font-semibold tracking-tight">Overplanner</span>
+          <Link to="/search" className="rounded-md p-1 text-stone-600 hover:bg-stone-100" aria-label="Search">
+            <Search className="size-5" />
+          </Link>
         </header>
 
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
-            <Outlet />
+            <Notice />
+            <Content />
           </div>
         </main>
       </div>
+    </div>
+  );
+}
+
+function Content() {
+  const status = useStore((s) => s.status);
+  const loadError = useStore((s) => s.loadError);
+  const load = useStore((s) => s.load);
+
+  if (status === "loading") return <p className="py-20 text-center text-sm text-stone-400">Loading…</p>;
+
+  if (status === "error") {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-sm text-stone-600">Couldn't reach the Overplanner server.</p>
+        <p className="mt-1 text-xs text-stone-400">{loadError}</p>
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="mt-4 rounded-lg bg-stone-900 px-3 py-2 text-sm font-medium text-white hover:bg-stone-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return <Outlet />;
+}
+
+function Notice() {
+  const notice = useStore((s) => s.notice);
+  const dismiss = useStore((s) => s.dismissNotice);
+  if (!notice) return null;
+
+  return (
+    <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <p className="flex-1">{notice}</p>
+      <button type="button" onClick={dismiss} className="rounded p-0.5 hover:bg-red-100" aria-label="Dismiss">
+        <X className="size-4" />
+      </button>
     </div>
   );
 }

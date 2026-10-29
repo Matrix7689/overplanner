@@ -1,103 +1,145 @@
 import { create } from "zustand";
-import categoriesJson from "../../data/categories.json";
 import { DEFAULT_SETTINGS } from "../../shared/types";
-import type { CategoryDef, Item, ItemKind, ItemStatus, Settings } from "../../shared/types";
-import { newId } from "../lib/id";
-import { MOCK_ITEMS, MOCK_LAST_BACKUP_AT } from "../mock/items";
+import type {
+  CategoryDef,
+  CreateItemInput,
+  Item,
+  ItemStatus,
+  Settings,
+  SettingsPatch,
+  UpdateItemInput,
+} from "../../shared/types";
+import { api } from "../lib/api";
 
-type NewItem = {
-  title: string;
-  notes?: string;
-  categories?: string[];
-  kind?: ItemKind;
-  dueDate?: string | null;
-};
+type LoadStatus = "loading" | "ready" | "error";
 
 type State = {
-  categories: CategoryDef[];
-  items: Item[];
-  settings: Settings;
-  lastBackupAt: string | null;
+  status: LoadStatus;
+  loadError: string | null;
+  // Last failed save, shown as a dismissible banner.
+  notice: string | null;
 
-  addItem: (input: NewItem) => Item;
-  setStatus: (id: string, status: ItemStatus) => void;
-  setCategories: (id: string, categories: string[]) => void;
-  updateSettings: (patch: Partial<Settings>) => void;
-  forceBackup: () => void;
+  categories: CategoryDef[];
+  items: Item[]; // open and done items, newest first. Deleted items are never loaded.
+  settings: Settings;
+
+  load: () => Promise<void>;
+  dismissNotice: () => void;
+
+  // Mutations return null when the server rejects them (the notice says why).
+  addItem: (input: CreateItemInput) => Promise<Item | null>;
+  updateItem: (id: string, patch: UpdateItemInput) => Promise<Item | null>;
+  setStatus: (id: string, status: ItemStatus) => Promise<void>;
+  setCategories: (id: string, categories: string[]) => Promise<void>;
+  updateSettings: (patch: SettingsPatch) => void;
 };
 
-const sortedCategories = [...(categoriesJson as CategoryDef[])].sort((a, b) => a.order - b.order);
+const LOAD_ATTEMPTS = 5;
+const SETTINGS_SAVE_DELAY_MS = 400;
 
-// In-memory store backed by mock data. Phase 2 swaps these actions for
-// calls to the local Express API.
-export const useStore = create<State>()((set) => ({
-  categories: sortedCategories,
-  items: MOCK_ITEMS,
-  settings: DEFAULT_SETTINGS,
-  lastBackupAt: MOCK_LAST_BACKUP_AT,
+let pendingSettings: SettingsPatch = {};
+let settingsTimer: ReturnType<typeof setTimeout> | undefined;
 
-  addItem: (input) => {
-    const now = new Date().toISOString();
-    const item: Item = {
-      id: newId(),
-      title: input.title.trim(),
-      notes: input.notes ?? "",
-      categories: input.categories ?? [],
-      kind: input.kind ?? "task",
-      status: "open",
-      dueDate: input.dueDate ?? null,
-      completedAt: null,
-      deletedAt: null,
-      tags: [],
-      source: "manual",
-      classification: { method: "manual", scores: {} },
-      createdAt: now,
-      updatedAt: now,
-    };
-    set((s) => ({ items: [item, ...s.items] }));
-    return item;
-  },
+export const useStore = create<State>()((set, get) => {
+  const fail = (action: string, err: unknown) => {
+    set({ notice: `Couldn't ${action}: ${err instanceof Error ? err.message : String(err)}` });
+  };
 
-  setStatus: (id, status) =>
-    set((s) => ({
-      items: s.items.map((it) => {
-        if (it.id !== id) return it;
-        const now = new Date().toISOString();
-        return {
-          ...it,
-          status,
-          completedAt: status === "done" ? now : null,
-          deletedAt: status === "deleted" ? now : null,
-          updatedAt: now,
-        };
-      }),
-    })),
+  const replaceItem = (item: Item) => set((s) => ({ items: s.items.map((it) => (it.id === item.id ? item : it)) }));
 
-  setCategories: (id, categories) =>
-    set((s) => ({
-      items: s.items.map((it) =>
-        it.id === id
-          ? {
-              ...it,
-              categories,
-              classification: { ...it.classification, method: "manual" },
-              updatedAt: new Date().toISOString(),
-            }
-          : it,
-      ),
-    })),
+  return {
+    status: "loading",
+    loadError: null,
+    notice: null,
+    categories: [],
+    items: [],
+    settings: DEFAULT_SETTINGS,
 
-  updateSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
+    load: async () => {
+      set({ status: "loading", loadError: null });
+      // The API can start a moment after the web app in dev, so retry briefly.
+      for (let attempt = 1; ; attempt++) {
+        try {
+          const [categories, items, settings] = await Promise.all([api.categories(), api.items(), api.settings()]);
+          set({ status: "ready", categories, items, settings });
+          return;
+        } catch (err) {
+          if (attempt >= LOAD_ATTEMPTS) {
+            set({ status: "error", loadError: err instanceof Error ? err.message : String(err) });
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+        }
+      }
+    },
 
-  forceBackup: () => set({ lastBackupAt: new Date().toISOString() }),
-}));
+    dismissNotice: () => set({ notice: null }),
+
+    addItem: async (input) => {
+      try {
+        const item = await api.createItem(input);
+        set((s) => ({ items: [item, ...s.items] }));
+        return item;
+      } catch (err) {
+        fail("add the item", err);
+        return null;
+      }
+    },
+
+    updateItem: async (id, patch) => {
+      try {
+        const item = await api.updateItem(id, patch);
+        replaceItem(item);
+        return item;
+      } catch (err) {
+        fail("save the item", err);
+        return null;
+      }
+    },
+
+    setStatus: async (id, status) => {
+      if (status === "deleted") {
+        try {
+          await api.deleteItem(id);
+          set((s) => ({ items: s.items.filter((it) => it.id !== id) }));
+        } catch (err) {
+          fail("delete the item", err);
+        }
+        return;
+      }
+      await get().updateItem(id, { status });
+    },
+
+    setCategories: async (id, categories) => {
+      await get().updateItem(id, { categories });
+    },
+
+    // Applied locally at once and saved after a short pause, so dragging a
+    // slider doesn't write settings.json on every step.
+    updateSettings: (patch) => {
+      set((s) => ({ settings: { ...s.settings, ...patch } }));
+      pendingSettings = { ...pendingSettings, ...patch };
+      clearTimeout(settingsTimer);
+      settingsTimer = setTimeout(async () => {
+        const toSave = pendingSettings;
+        pendingSettings = {};
+        try {
+          set({ settings: await api.updateSettings(toSave) });
+        } catch (err) {
+          fail("save settings", err);
+          try {
+            set({ settings: await api.settings() });
+          } catch {
+            // Keep the local values; the notice already explains.
+          }
+        }
+      }, SETTINGS_SAVE_DELAY_MS);
+    },
+  };
+});
 
 // Helpers that operate on plain arrays. Components select `items` from the
 // store and derive views with useMemo, so selectors never return new arrays.
-
-export function visible(items: Item[]): Item[] {
-  return items.filter((it) => it.status !== "deleted");
-}
 
 export function inCategory(items: Item[], slug: string): Item[] {
   return items.filter((it) => it.status !== "deleted" && it.categories.includes(slug));

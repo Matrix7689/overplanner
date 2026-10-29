@@ -7,6 +7,7 @@ import { DevPage } from "./pages/DevPage";
 import { InboxPage } from "./pages/InboxPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ResultsPage } from "./pages/ResultsPage";
+import { SearchPage } from "./pages/SearchPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
 export const router = createBrowserRouter([
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
       { path: "calendar", element: <CalendarPage /> },
       { path: "results", element: <ResultsPage /> },
       { path: "inbox", element: <InboxPage /> },
+      { path: "search", element: <SearchPage /> },
       { path: "dev", element: <DevPage /> },
       { path: "settings", element: <SettingsPage /> },
       { path: "*", element: <NotFoundPage /> },

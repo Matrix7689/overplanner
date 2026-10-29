@@ -3,3 +3,10 @@ dist
 *.local
 *.tsbuildinfo
 .DS_Store
+
+# Personal data written by the server. categories.json stays tracked as the seed.
+data/categories/
+data/inbox.json
+data/settings.json
+data/feedback.json
+data/*.tmp

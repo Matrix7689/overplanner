@@ -5,7 +5,6 @@ import type { CategoryDef, Item } from "../../shared/types";
 import { ItemList } from "../components/ItemRow";
 import { PageHeader } from "../components/PageHeader";
 import { QuickAdd } from "../components/QuickAdd";
-import { formatDateTime } from "../lib/dates";
 import { useStore } from "../store/useStore";
 
 const LANE_LIMIT = 5;
@@ -91,17 +90,16 @@ function Swimlane({ category, items }: { category: CategoryDef; items: Item[] })
   );
 }
 
+// Backups arrive in phase 4; until then this only shows that none exist.
 function BackupStatus() {
-  const lastBackupAt = useStore((s) => s.lastBackupAt);
-  const forceBackup = useStore((s) => s.forceBackup);
-
   return (
     <div className="flex items-center gap-3 text-xs text-stone-500">
-      <span>{lastBackupAt ? `Last backed up at ${formatDateTime(lastBackupAt)}` : "Not backed up yet"}</span>
+      <span>Not backed up yet</span>
       <button
         type="button"
-        onClick={forceBackup}
-        className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 font-medium text-stone-700 hover:bg-stone-50"
+        disabled
+        title="Backups are not set up yet"
+        className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50 disabled:hover:bg-white"
       >
         <CloudUpload className="size-3.5" />
         Force Backup
