@@ -1,12 +1,15 @@
-import { useMemo } from "react";
+import { Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
 import type { Item } from "../../shared/types";
+import { CategoryChips } from "../components/CategoryChips";
 import { ItemRow } from "../components/ItemRow";
 import { PageHeader } from "../components/PageHeader";
 import { QuickAdd } from "../components/QuickAdd";
+import { useSuggestions } from "../lib/useSuggestions";
 import { inboxItems, useStore } from "../store/useStore";
 
-// Uncategorized items and shared captures. Classification chips replace the
-// manual "Move to" picker in phase 3.
+// Uncategorized items and shared captures. Each item gets keyword
+// suggestions right away; "Ask JEV" refines them on demand.
 export function InboxPage() {
   const items = useStore((s) => s.items);
   const inbox = useMemo(() => inboxItems(items), [items]);
@@ -33,29 +36,58 @@ export function InboxPage() {
 }
 
 function InboxRow({ item }: { item: Item }) {
-  const categories = useStore((s) => s.categories);
-  const setCategories = useStore((s) => s.setCategories);
+  const updateItem = useStore((s) => s.updateItem);
+  const text = item.notes ? `${item.title}\n${item.notes}` : item.title;
+  const suggestions = useSuggestions(text, { autoJev: false });
+  const [saving, setSaving] = useState(false);
+
+  const anySelected = suggestions.visible.some((slug) => suggestions.isSelected(slug));
+
+  const file = async () => {
+    setSaving(true);
+    const { categories, classification } = await suggestions.resolve();
+    // Leaves the Inbox on success, which unmounts this row.
+    const saved = await updateItem(item.id, { categories, classification });
+    if (!saved) setSaving(false);
+  };
 
   return (
-    <div className="flex flex-col gap-1 py-1 sm:flex-row sm:items-center sm:gap-3">
-      <ul className="min-w-0 flex-1">
+    <div className="py-1">
+      <ul>
         <ItemRow item={item} showCategories={false} />
       </ul>
-      <div className="flex items-center gap-2 pb-2 pl-8 sm:pb-0 sm:pl-0">
-        {item.source === "share" && <span className="text-xs text-stone-400">Shared</span>}
-        <select
-          value=""
-          onChange={(e) => e.target.value && setCategories(item.id, [e.target.value])}
-          className="rounded-md border border-stone-200 bg-white px-2 py-1 text-xs text-stone-600"
-          aria-label="Move to category"
-        >
-          <option value="">Move to…</option>
-          {categories.map((c) => (
-            <option key={c.slug} value={c.slug}>
-              {c.icon} {c.name}
-            </option>
-          ))}
-        </select>
+      <div className="space-y-2 pb-3 pl-8">
+        <CategoryChips
+          scores={suggestions.scores}
+          visible={suggestions.visible}
+          isSelected={suggestions.isSelected}
+          onToggle={suggestions.toggle}
+          onAdd={suggestions.add}
+          jevStatus={suggestions.jevStatus}
+          jevError={suggestions.jevError}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={file}
+            disabled={!anySelected || saving}
+            className="rounded-md bg-stone-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-stone-700 disabled:opacity-40"
+          >
+            File
+          </button>
+          {suggestions.jevConfigured && (
+            <button
+              type="button"
+              onClick={suggestions.requestJev}
+              disabled={suggestions.jevStatus === "pending" || suggestions.jevStatus === "ok"}
+              className="inline-flex items-center gap-1 rounded-md border border-stone-200 px-2.5 py-1 text-xs text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+            >
+              <Sparkles className="size-3" />
+              Ask JEV
+            </button>
+          )}
+          {item.source === "share" && <span className="text-xs text-stone-400">Shared</span>}
+        </div>
       </div>
     </div>
   );

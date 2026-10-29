@@ -18,6 +18,9 @@ export const CategoryDefSchema = z.object({
   color: z.string(),
   icon: z.string(),
   order: z.number(),
+  // Keyword rules: plain words match whole words (plurals too); entries with
+  // punctuation, such as "youtube.com" or "$", match anywhere in the text.
+  keywords: z.array(z.string().min(1)).default([]),
 });
 
 export const CategoriesFileSchema = z.array(CategoryDefSchema);
@@ -28,8 +31,10 @@ export const ItemKindSchema = z.enum(["task", "list-item", "note"]);
 export const ItemStatusSchema = z.enum(["open", "done", "deleted"]);
 export const ItemSourceSchema = z.enum(["manual", "share", "keep-import", "whatsapp-import"]);
 
+export const ClassificationMethodSchema = z.enum(["manual", "keyword", "jev"]);
+
 export const ClassificationSchema = z.object({
-  method: z.enum(["manual", "keyword", "jev"]),
+  method: ClassificationMethodSchema,
   scores: z.record(z.string(), z.number().min(0).max(1)),
 });
 
@@ -74,6 +79,8 @@ export const UpdateItemSchema = z
     status: ItemStatusSchema,
     dueDate: isoDate.nullable(),
     tags: z.array(z.string()),
+    // Sent with categories when filing from the Inbox with fresh suggestions.
+    classification: ClassificationSchema,
   })
   .partial();
 
@@ -86,6 +93,31 @@ export const ItemQuerySchema = z.object({
   dueFrom: isoDate.optional(),
   dueTo: isoDate.optional(),
 });
+
+// ---- Classification ----
+
+// POST /api/classify. `jev: false` returns keyword scores only (instant).
+export const ClassifyRequestSchema = z.strictObject({
+  text: z.string().trim().min(1, "Text is required").max(5000),
+  jev: z.boolean().default(true),
+});
+
+// data/feedback.json: one labeled example per user correction.
+export const FeedbackEntrySchema = z.object({
+  id: z.string().min(1),
+  at: isoDateTime,
+  event: z.enum(["create", "recategorize"]),
+  itemId: z.string().min(1),
+  text: z.string(),
+  method: ClassificationMethodSchema, // how the suggestion was made
+  scores: z.record(z.string(), z.number()),
+  suggested: z.array(slug), // categories that were pre-selected (or the item's old categories)
+  chosen: z.array(slug), // what the user saved
+  added: z.array(slug),
+  removed: z.array(slug),
+});
+
+export const FeedbackFileSchema = z.array(FeedbackEntrySchema);
 
 // ---- Settings ----
 

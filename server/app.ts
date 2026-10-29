@@ -3,13 +3,16 @@ import path from "node:path";
 import express, { type ErrorRequestHandler } from "express";
 import { ZodError } from "zod";
 import {
+  ClassifyRequestSchema,
   CreateItemSchema,
   ItemQuerySchema,
   SettingsPatchSchema,
   UpdateItemSchema,
 } from "../shared/schemas";
 import type { CategoryRepo } from "./categories";
+import type { Classifier } from "./classify/classifier";
 import { HttpError } from "./errors";
+import type { FeedbackRepo } from "./feedback";
 import type { ItemRepo } from "./items";
 import type { SearchIndex } from "./search";
 import type { SettingsRepo } from "./settings";
@@ -19,10 +22,21 @@ type Deps = {
   items: ItemRepo;
   settings: SettingsRepo;
   search: SearchIndex;
+  classifier: Classifier;
+  feedback: FeedbackRepo;
   distDir: string;
 };
 
-export function createApp({ categories, items, settings, search, distDir }: Deps) {
+// Feedback is a side log: a failure to write it never fails the request.
+async function logFeedback(write: Promise<void>): Promise<void> {
+  try {
+    await write;
+  } catch (err) {
+    console.error("Could not write feedback.json:", err);
+  }
+}
+
+export function createApp({ categories, items, settings, search, classifier, feedback, distDir }: Deps) {
   const app = express();
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
@@ -49,11 +63,19 @@ export function createApp({ categories, items, settings, search, distDir }: Deps
   });
 
   api.post("/items", async (req, res) => {
-    res.status(201).json(await items.create(CreateItemSchema.parse(req.body)));
+    const item = await items.create(CreateItemSchema.parse(req.body));
+    await logFeedback(feedback.recordCreate(item, settings.get()));
+    res.status(201).json(item);
   });
 
   api.patch("/items/:id", async (req, res) => {
-    res.json(await items.update(req.params.id, UpdateItemSchema.parse(req.body)));
+    const patch = UpdateItemSchema.parse(req.body);
+    const prev = items.get(req.params.id);
+    const next = await items.update(req.params.id, patch);
+    if (prev && patch.categories && !sameSet(prev.categories, next.categories)) {
+      await logFeedback(feedback.recordRecategorize(prev, next, patch.classification !== undefined, settings.get()));
+    }
+    res.json(next);
   });
 
   // Soft delete: the item is hidden now and purged after the 30-day hold.
@@ -68,6 +90,17 @@ export function createApp({ categories, items, settings, search, distDir }: Deps
 
   api.patch("/settings", async (req, res) => {
     res.json(await settings.update(SettingsPatchSchema.parse(req.body)));
+  });
+
+  // Category suggestions for Quick Add and the Inbox. Keyword rules always
+  // run; JEV runs when requested and configured. Never blocks saving.
+  api.post("/classify", async (req, res) => {
+    const { text, jev } = ClassifyRequestSchema.parse(req.body);
+    res.json(await classifier.classify(text, jev));
+  });
+
+  api.get("/classify/status", (_req, res) => {
+    res.json(classifier.status());
   });
 
   api.use(() => {
@@ -88,6 +121,10 @@ export function createApp({ categories, items, settings, search, distDir }: Deps
 
   app.use(errorHandler);
   return app;
+}
+
+function sameSet(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((x) => b.includes(x));
 }
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {

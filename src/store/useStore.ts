@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { DEFAULT_SETTINGS } from "../../shared/types";
 import type {
   CategoryDef,
+  ClassifierStatus,
   CreateItemInput,
   Item,
   ItemStatus,
@@ -22,8 +23,10 @@ type State = {
   categories: CategoryDef[];
   items: Item[]; // open and done items, newest first. Deleted items are never loaded.
   settings: Settings;
+  classifier: ClassifierStatus | null; // null until loaded or if unavailable
 
   load: () => Promise<void>;
+  refreshClassifier: () => Promise<void>;
   dismissNotice: () => void;
 
   // Mutations return null when the server rejects them (the notice says why).
@@ -54,6 +57,7 @@ export const useStore = create<State>()((set, get) => {
     categories: [],
     items: [],
     settings: DEFAULT_SETTINGS,
+    classifier: null,
 
     load: async () => {
       set({ status: "loading", loadError: null });
@@ -62,6 +66,7 @@ export const useStore = create<State>()((set, get) => {
         try {
           const [categories, items, settings] = await Promise.all([api.categories(), api.items(), api.settings()]);
           set({ status: "ready", categories, items, settings });
+          void get().refreshClassifier();
           return;
         } catch (err) {
           if (attempt >= LOAD_ATTEMPTS) {
@@ -70,6 +75,15 @@ export const useStore = create<State>()((set, get) => {
           }
           await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
         }
+      }
+    },
+
+    // Optional: without it the app works with keyword suggestions only.
+    refreshClassifier: async () => {
+      try {
+        set({ classifier: await api.classifierStatus() });
+      } catch {
+        // Leave the previous status in place.
       }
     },
 

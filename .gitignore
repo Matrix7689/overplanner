@@ -2,6 +2,9 @@ node_modules
 dist
 *.local
 *.tsbuildinfo
+
+# Secrets (JEV API key). See .env.example.
+.env
 .DS_Store
 
 # Personal data written by the server. categories.json stays tracked as the seed.

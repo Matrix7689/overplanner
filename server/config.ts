@@ -1,6 +1,12 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..");
+
+// Secrets such as JEV_API_KEY live in .env (git-ignored). Real environment
+// variables take precedence over the file.
+const envFile = path.join(root, ".env");
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 export const config = {
   // Not PORT: dev tooling often sets PORT for the web server.
@@ -12,4 +18,11 @@ export const config = {
   // Used when DATA_DIR has no categories.json yet.
   seedCategoriesFile: path.join(root, "data", "categories.json"),
   distDir: path.join(root, "dist"),
+
+  jev: {
+    apiKey: process.env.JEV_API_KEY || undefined,
+    baseUrl: (process.env.JEV_BASE_URL ?? "https://api.typesafe.ai/v1").replace(/\/+$/, ""),
+    model: process.env.JEV_MODEL ?? "jev-latest",
+    timeoutMs: Number(process.env.JEV_TIMEOUT_MS ?? 8000),
+  },
 };

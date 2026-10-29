@@ -12,7 +12,7 @@ const LANE_LIMIT = 5;
 export function DashboardPage() {
   const categories = useStore((s) => s.categories);
   const items = useStore((s) => s.items);
-  const [lastAdded, setLastAdded] = useState<string | null>(null);
+  const [lastAdded, setLastAdded] = useState<{ title: string; categories: string[] } | null>(null);
 
   const openBySlug = useMemo(() => {
     const map: Record<string, Item[]> = {};
@@ -30,13 +30,24 @@ export function DashboardPage() {
       <PageHeader title="Dashboard" subtitle={greeting} actions={<BackupStatus />} />
 
       <section className="mb-8">
-        <QuickAdd onAdded={setLastAdded} />
+        <QuickAdd onAdded={(title, slugs) => setLastAdded({ title, categories: slugs })} />
         {lastAdded && (
           <p className="mt-2 text-xs text-stone-500">
-            Added “{lastAdded}” to the{" "}
-            <Link to="/inbox" className="underline hover:text-stone-800">
-              Inbox
-            </Link>
+            Added “{lastAdded.title}” to{" "}
+            {lastAdded.categories.length === 0 ? (
+              <Link to="/inbox" className="underline hover:text-stone-800">
+                the Inbox
+              </Link>
+            ) : (
+              lastAdded.categories.map((slug, i) => (
+                <span key={slug}>
+                  {i > 0 && ", "}
+                  <Link to={`/category/${slug}`} className="underline hover:text-stone-800">
+                    {categories.find((c) => c.slug === slug)?.name ?? slug}
+                  </Link>
+                </span>
+              ))
+            )}
             .
           </p>
         )}

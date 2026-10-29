@@ -4,7 +4,9 @@ import type { z } from "zod";
 import type {
   CategoryDefSchema,
   ClassificationSchema,
+  ClassifyRequestSchema,
   CreateItemSchema,
+  FeedbackEntrySchema,
   ItemKindSchema,
   ItemQuerySchema,
   ItemSchema,
@@ -27,6 +29,38 @@ export type ClassificationMethod = z.infer<typeof ClassificationSchema>["method"
 export type CreateItemInput = z.input<typeof CreateItemSchema>;
 export type UpdateItemInput = z.input<typeof UpdateItemSchema>;
 export type ItemQuery = z.input<typeof ItemQuerySchema>;
+
+export type Classification = z.infer<typeof ClassificationSchema>;
+export type ClassifyRequest = z.input<typeof ClassifyRequestSchema>;
+export type FeedbackEntry = z.infer<typeof FeedbackEntrySchema>;
+
+// What happened to the JEV part of a classify call.
+// "off": no API key; "skipped": not requested (keyword-only call).
+export type JevCallStatus = "ok" | "off" | "skipped" | "error" | "timeout";
+
+// POST /api/classify response. Scores are 0..1 per category slug.
+export type ClassifyResult = {
+  scores: Record<string, number>;
+  method: "keyword" | "jev";
+  jev: { status: JevCallStatus; error?: string };
+};
+
+// GET /api/classify/status response.
+export type ClassifierStatus = {
+  jev: {
+    configured: boolean;
+    model: string;
+    lastCall: null | {
+      at: string;
+      ok: boolean;
+      latencyMs: number;
+      error?: string;
+      model?: string;
+      inputTokens?: number;
+    };
+  };
+  feedbackCount: number;
+};
 
 export type Settings = z.infer<typeof SettingsSchema>;
 export type SettingsPatch = z.input<typeof SettingsPatchSchema>;

@@ -1,5 +1,8 @@
 import type {
   CategoryDef,
+  ClassifierStatus,
+  ClassifyRequest,
+  ClassifyResult,
   CreateItemInput,
   Item,
   ItemQuery,
@@ -46,6 +49,11 @@ export const api = {
     request<Item>(`/items/${encodeURIComponent(id)}`, json("PATCH", patch)),
 
   deleteItem: (id: string) => request<void>(`/items/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+  classify: (input: ClassifyRequest, signal?: AbortSignal) =>
+    request<ClassifyResult>("/classify", { ...json("POST", input), signal }),
+
+  classifierStatus: () => request<ClassifierStatus>("/classify/status"),
 
   settings: () => request<Settings>("/settings"),
 
