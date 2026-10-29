@@ -1,10 +1,12 @@
-import { CloudUpload } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CloudUpload, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import type { CategoryDef, Item } from "../../shared/types";
 import { ItemList } from "../components/ItemRow";
 import { PageHeader } from "../components/PageHeader";
 import { QuickAdd } from "../components/QuickAdd";
+import { backupFailed } from "../lib/backup";
+import { formatDateTime } from "../lib/dates";
 import { useStore } from "../store/useStore";
 
 const LANE_LIMIT = 5;
@@ -101,18 +103,52 @@ function Swimlane({ category, items }: { category: CategoryDef; items: Item[] })
   );
 }
 
-// Backups arrive in phase 4; until then this only shows that none exist.
 function BackupStatus() {
+  const backup = useStore((s) => s.backup);
+  const refresh = useStore((s) => s.refreshBackup);
+  const forceBackup = useStore((s) => s.forceBackup);
+
+  // Scheduled backups happen in the background; refresh when the page
+  // comes back into view.
+  useEffect(() => {
+    void refresh();
+    const onVisible = () => document.visibilityState === "visible" && void refresh();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [refresh]);
+
+  if (!backup) return null;
+
   return (
-    <div className="flex items-center gap-3 text-xs text-stone-500">
-      <span>Not backed up yet</span>
+    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-stone-500">
+      {!backup.configured ? (
+        <span>
+          Backups are off.{" "}
+          <Link to="/settings" className="underline hover:text-stone-800">
+            Set a folder
+          </Link>
+        </span>
+      ) : backup.running ? (
+        <span>Backing up…</span>
+      ) : (
+        <>
+          {backupFailed(backup) && (
+            <span className="font-medium text-amber-700" title={backup.lastError ?? undefined}>
+              Last backup failed
+            </span>
+          )}
+          <span>
+            {backup.lastSuccessAt ? `Last backed up at ${formatDateTime(backup.lastSuccessAt)}` : "Not backed up yet"}
+          </span>
+        </>
+      )}
       <button
         type="button"
-        disabled
-        title="Backups are not set up yet"
+        onClick={() => void forceBackup()}
+        disabled={!backup.configured || backup.running}
         className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50 disabled:hover:bg-white"
       >
-        <CloudUpload className="size-3.5" />
+        {backup.running ? <Loader2 className="size-3.5 animate-spin" /> : <CloudUpload className="size-3.5" />}
         Force Backup
       </button>
     </div>

@@ -12,4 +12,5 @@ data/categories/
 data/inbox.json
 data/settings.json
 data/feedback.json
+data/backup.json
 data/*.tmp

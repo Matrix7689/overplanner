@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import type { ClassifyResult } from "../../shared/types";
 import { PageHeader } from "../components/PageHeader";
 import { api } from "../lib/api";
+import { backupFailed } from "../lib/backup";
 import { formatDateTime } from "../lib/dates";
 import { useStore } from "../store/useStore";
 
@@ -34,14 +35,7 @@ export function SettingsPage() {
           </p>
         </Section>
 
-        <Section title="Backup" description="Copies data/ to this folder every 6 hours.">
-          <input
-            value={settings.backupPath}
-            onChange={(e) => updateSettings({ backupPath: e.target.value })}
-            placeholder="G:\My Drive\Overplanner"
-            className="w-full rounded-lg border border-stone-200 px-3 py-2 font-mono text-sm outline-none focus:border-stone-400"
-          />
-        </Section>
+        <BackupSection />
 
         <JevSection />
 
@@ -82,6 +76,78 @@ export function SettingsPage() {
         </Section>
       </div>
     </>
+  );
+}
+
+function BackupSection() {
+  const settings = useStore((s) => s.settings);
+  const updateSettings = useStore((s) => s.updateSettings);
+  const backup = useStore((s) => s.backup);
+  const refresh = useStore((s) => s.refreshBackup);
+  const forceBackup = useStore((s) => s.forceBackup);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return (
+    <Section
+      title="Backup"
+      description="Every 6 hours, data/ is copied into a new dated folder here. Use a Google Drive for desktop folder so it reaches the cloud."
+    >
+      <label className="block text-sm">
+        <span className="text-stone-600">Backup folder</span>
+        <input
+          value={settings.backupPath}
+          onChange={(e) => updateSettings({ backupPath: e.target.value })}
+          placeholder="G:\My Drive\Overplanner backups"
+          className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 font-mono text-sm outline-none focus:border-stone-400"
+        />
+      </label>
+      <label className="flex items-center gap-3 text-sm">
+        <span className="text-stone-600">Backups to keep</span>
+        <input
+          type="number"
+          min={1}
+          max={1000}
+          value={settings.backupKeep}
+          onChange={(e) => {
+            const n = Math.round(Number(e.target.value));
+            if (n >= 1 && n <= 1000) updateSettings({ backupKeep: n });
+          }}
+          className="w-20 rounded-lg border border-stone-200 px-2 py-1 text-sm outline-none focus:border-stone-400"
+        />
+        <span className="text-xs text-stone-400">Older overplanner-… folders are deleted. Nothing else in the folder is touched.</span>
+      </label>
+
+      {backup && (
+        <div className="space-y-3 border-t border-stone-100 pt-3">
+          <Status
+            label="Last backup"
+            value={backup.lastSuccessAt ? formatDateTime(backup.lastSuccessAt) : "None yet"}
+          />
+          {backup.lastSuccessFolder && <Status label="Saved to" value={backup.lastSuccessFolder} />}
+          {backupFailed(backup) && (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Last attempt failed at {formatDateTime(backup.lastAttemptAt!)}: {backup.lastError}
+            </p>
+          )}
+          <Status
+            label="Next scheduled"
+            value={backup.configured && backup.nextRunAt ? formatDateTime(backup.nextRunAt) : "Off until a folder is set"}
+          />
+          <button
+            type="button"
+            onClick={() => void forceBackup()}
+            disabled={!backup.configured || backup.running}
+            className="inline-flex items-center gap-1 rounded-lg border border-stone-200 px-3 py-1.5 text-sm hover:bg-stone-50 disabled:opacity-40"
+          >
+            {backup.running && <Loader2 className="size-3.5 animate-spin" />}
+            Back up now
+          </button>
+        </div>
+      )}
+    </Section>
   );
 }
 

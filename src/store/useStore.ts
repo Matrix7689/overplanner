@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { DEFAULT_SETTINGS } from "../../shared/types";
 import type {
+  BackupStatus,
   CategoryDef,
   ClassifierStatus,
   CreateItemInput,
@@ -24,9 +25,12 @@ type State = {
   items: Item[]; // open and done items, newest first. Deleted items are never loaded.
   settings: Settings;
   classifier: ClassifierStatus | null; // null until loaded or if unavailable
+  backup: BackupStatus | null;
 
   load: () => Promise<void>;
   refreshClassifier: () => Promise<void>;
+  refreshBackup: () => Promise<void>;
+  forceBackup: () => Promise<void>;
   dismissNotice: () => void;
 
   // Mutations return null when the server rejects them (the notice says why).
@@ -58,6 +62,7 @@ export const useStore = create<State>()((set, get) => {
     items: [],
     settings: DEFAULT_SETTINGS,
     classifier: null,
+    backup: null,
 
     load: async () => {
       set({ status: "loading", loadError: null });
@@ -67,6 +72,7 @@ export const useStore = create<State>()((set, get) => {
           const [categories, items, settings] = await Promise.all([api.categories(), api.items(), api.settings()]);
           set({ status: "ready", categories, items, settings });
           void get().refreshClassifier();
+          void get().refreshBackup();
           return;
         } catch (err) {
           if (attempt >= LOAD_ATTEMPTS) {
@@ -84,6 +90,26 @@ export const useStore = create<State>()((set, get) => {
         set({ classifier: await api.classifierStatus() });
       } catch {
         // Leave the previous status in place.
+      }
+    },
+
+    refreshBackup: async () => {
+      try {
+        set({ backup: await api.backupStatus() });
+      } catch {
+        // Leave the previous status in place.
+      }
+    },
+
+    // Shows the run as in progress, then the result. A failed backup comes
+    // back as a status with lastError, which the backup widgets display.
+    forceBackup: async () => {
+      set((s) => ({ backup: s.backup && { ...s.backup, running: true } }));
+      try {
+        set({ backup: await api.runBackup() });
+      } catch (err) {
+        fail("back up", err);
+        await get().refreshBackup();
       }
     },
 
@@ -139,6 +165,8 @@ export const useStore = create<State>()((set, get) => {
         pendingSettings = {};
         try {
           set({ settings: await api.updateSettings(toSave) });
+          // The backup folder and retention live in settings.
+          if ("backupPath" in toSave || "backupKeep" in toSave) void get().refreshBackup();
         } catch (err) {
           fail("save settings", err);
           try {

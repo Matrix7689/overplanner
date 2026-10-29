@@ -1,4 +1,5 @@
 import type {
+  BackupStatus,
   CategoryDef,
   ClassifierStatus,
   ClassifyRequest,
@@ -54,6 +55,10 @@ export const api = {
     request<ClassifyResult>("/classify", { ...json("POST", input), signal }),
 
   classifierStatus: () => request<ClassifierStatus>("/classify/status"),
+
+  backupStatus: () => request<BackupStatus>("/backup"),
+
+  runBackup: () => request<BackupStatus>("/backup", { method: "POST" }),
 
   settings: () => request<Settings>("/settings"),
 

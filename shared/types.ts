@@ -2,6 +2,7 @@
 // schemas in schemas.ts. Field meanings follow SPEC.md.
 import type { z } from "zod";
 import type {
+  BackupStateSchema,
   CategoryDefSchema,
   ClassificationSchema,
   ClassifyRequestSchema,
@@ -62,6 +63,17 @@ export type ClassifierStatus = {
   feedbackCount: number;
 };
 
+export type BackupState = z.infer<typeof BackupStateSchema>;
+
+// GET /api/backup and POST /api/backup response.
+export type BackupStatus = BackupState & {
+  configured: boolean; // a backup folder is set
+  path: string;
+  keep: number;
+  running: boolean;
+  nextRunAt: string | null;
+};
+
 export type Settings = z.infer<typeof SettingsSchema>;
 export type SettingsPatch = z.input<typeof SettingsPatchSchema>;
 
@@ -69,6 +81,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoSelectThreshold: 0.8,
   maybeThreshold: 0.4,
   backupPath: "",
+  backupKeep: 28, // one week of 6-hourly backups
   ui: {},
 };
 

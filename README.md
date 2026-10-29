@@ -9,6 +9,7 @@ See [SPEC.md](SPEC.md) for the full specification.
 - Phase 1 (skeleton): Vite + React + TypeScript, React Router, Zustand, Tailwind CSS.
 - Phase 2 (local API): Express server, JSON storage validated with Zod, item CRUD, Fuse.js search, 30-day purge of deleted items.
 - Phase 3 (classification): keyword rules, JEV client, suggestion chips in Quick Add and the Inbox, feedback logging.
+- Phase 4 (backup): 6-hourly snapshots of `data/` to a Google Drive folder, status on the Dashboard, Force Backup.
 
 ## Run
 
@@ -54,6 +55,16 @@ Settings come from environment variables or a `.env` file in the project root (g
 
 Quick Add on the Dashboard and Inbox asks JEV after a short pause in typing. In the Inbox, items get keyword suggestions at once and "Ask JEV" on demand.
 
+## Backup
+
+Set the backup folder in Settings, for example `G:\My Drive\Overplanner backups` (a Google Drive for desktop folder, so it syncs to the cloud).
+
+- Every 6 hours (00:00, 06:00, 12:00, 18:00) the whole `data/` folder is copied into a new folder named `overplanner-YYYY-MM-DD_HHMMSS`. If the PC was off at those times, a backup runs when the server starts.
+- The copy is taken while writes are paused, so it's consistent. It's written as `….partial` and renamed when complete.
+- The newest 28 snapshots are kept (adjustable). Pruning only removes `overplanner-…` folders; anything else in the folder is left alone.
+- If the folder's parent is missing (Google Drive not running), the backup fails with a message and the Dashboard shows "Last backup failed".
+- To restore, stop the server and copy a snapshot's contents back into `data/`.
+
 ## Data
 
 All data is in `data/`:
@@ -63,6 +74,7 @@ All data is in `data/`:
 - `inbox.json` items with no category
 - `settings.json` thresholds, backup path, UI preferences
 - `feedback.json` classification corrections
+- `backup.json` outcome of the last backups
 
 Everything except `categories.json` is personal data and is git-ignored. Writes are atomic (temp file, then rename) and every read and write is validated. If a file fails validation, the server refuses to start and names the problem rather than overwriting it.
 
@@ -78,6 +90,8 @@ Everything except `categories.json` is personal data and is git-ignored. Writes 
 | DELETE | `/api/items/:id` | Soft delete; purged 30 days later |
 | POST | `/api/classify` | `{ text, jev? }` → scores per category. `jev: false` for keyword rules only |
 | GET | `/api/classify/status` | JEV configured, last call, number of corrections |
+| GET | `/api/backup` | Backup status: last success, last error, next run |
+| POST | `/api/backup` | Force Backup; returns the status when done |
 | GET, PATCH | `/api/settings` | Settings |
 
 ## Layout

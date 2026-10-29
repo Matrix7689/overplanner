@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 - 2026-10-29
+
+- Phase 4 backups: every 6 hours (node-cron), `data/` is copied into a new `overplanner-YYYY-MM-DD_HHMMSS` folder in the backup folder (a Google Drive for desktop path)
+- Consistent snapshots (taken under the write lock), copied as `.partial` then renamed; old snapshots pruned to a configurable count
+- Catch-up backup on startup when the last one is over 6 hours old
+- Dashboard shows "Last backed up at …" and Force Backup; Settings has the folder, retention, status and next run
+
 ## 0.3.0 - 2026-10-29
 
 - Phase 3 classification: keyword rules (in `categories.json`) run first, then JEV (TypeSafe AI) scores every category in one call

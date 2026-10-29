@@ -9,6 +9,7 @@ import {
   SettingsPatchSchema,
   UpdateItemSchema,
 } from "../shared/schemas";
+import type { BackupService } from "./backup";
 import type { CategoryRepo } from "./categories";
 import type { Classifier } from "./classify/classifier";
 import { HttpError } from "./errors";
@@ -24,6 +25,7 @@ type Deps = {
   search: SearchIndex;
   classifier: Classifier;
   feedback: FeedbackRepo;
+  backup: BackupService;
   distDir: string;
 };
 
@@ -36,7 +38,7 @@ async function logFeedback(write: Promise<void>): Promise<void> {
   }
 }
 
-export function createApp({ categories, items, settings, search, classifier, feedback, distDir }: Deps) {
+export function createApp({ categories, items, settings, search, classifier, feedback, backup, distDir }: Deps) {
   const app = express();
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
@@ -101,6 +103,16 @@ export function createApp({ categories, items, settings, search, classifier, fee
 
   api.get("/classify/status", (_req, res) => {
     res.json(classifier.status());
+  });
+
+  api.get("/backup", (_req, res) => {
+    res.json(backup.status());
+  });
+
+  // Force Backup. Waits for the run (or joins one in progress) and returns
+  // the resulting status; a failed run shows up in lastError.
+  api.post("/backup", async (_req, res) => {
+    res.json(await backup.run("manual"));
   });
 
   api.use(() => {

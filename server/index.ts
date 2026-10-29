@@ -1,4 +1,5 @@
 import { createApp } from "./app";
+import { BackupService } from "./backup";
 import { CategoryRepo } from "./categories";
 import { Classifier } from "./classify/classifier";
 import { JevClient } from "./classify/jev";
@@ -23,6 +24,9 @@ async function main() {
   const feedback = new FeedbackRepo(config.dataDir);
   await feedback.load();
 
+  const backup = new BackupService(config.dataDir, settings);
+  await backup.load();
+
   const search = new SearchIndex(items, categories);
   const jev = new JevClient(config.jev);
   const classifier = new Classifier(categories, jev, feedback);
@@ -36,10 +40,13 @@ async function main() {
   await purge();
   setInterval(purge, PURGE_INTERVAL_MS);
 
-  const app = createApp({ categories, items, settings, search, classifier, feedback, distDir: config.distDir });
+  const app = createApp({ categories, items, settings, search, classifier, feedback, backup, distDir: config.distDir });
   app.listen(config.port, config.host, () => {
     console.log(`Overplanner API on http://${config.host}:${config.port} (data: ${config.dataDir})`);
     console.log(jev.configured ? `JEV classification on (${config.jev.model}).` : "JEV_API_KEY not set: keyword rules only.");
+    const { configured, path } = backup.status();
+    console.log(configured ? `Backups every 6 hours to ${path}` : "No backup folder set: backups off.");
+    backup.start();
   });
 }
 

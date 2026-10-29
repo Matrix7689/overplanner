@@ -119,12 +119,23 @@ export const FeedbackEntrySchema = z.object({
 
 export const FeedbackFileSchema = z.array(FeedbackEntrySchema);
 
+// ---- Backup ----
+
+// data/backup.json: outcome of the last backup runs, kept across restarts.
+export const BackupStateSchema = z.object({
+  lastSuccessAt: isoDateTime.nullable(),
+  lastSuccessFolder: z.string().nullable(),
+  lastAttemptAt: isoDateTime.nullable(),
+  lastError: z.string().nullable(),
+});
+
 // ---- Settings ----
 
 const SettingsBaseSchema = z.object({
   autoSelectThreshold: z.number().min(0).max(1),
   maybeThreshold: z.number().min(0).max(1),
   backupPath: z.string(),
+  backupKeep: z.number().int().min(1).max(1000), // snapshots to keep in the backup folder
   ui: z.record(z.string(), z.unknown()),
 });
 
