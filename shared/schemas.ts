@@ -131,12 +131,19 @@ export const BackupStateSchema = z.object({
 
 // ---- Settings ----
 
+export const ThemeSchema = z.enum(["system", "light", "dark"]);
+
+// UI preferences stored in settings.json. Unknown keys are kept.
+const UiSchema = z.looseObject({
+  theme: ThemeSchema.default("system"),
+});
+
 const SettingsBaseSchema = z.object({
   autoSelectThreshold: z.number().min(0).max(1),
   maybeThreshold: z.number().min(0).max(1),
   backupPath: z.string(),
   backupKeep: z.number().int().min(1).max(1000), // snapshots to keep in the backup folder
-  ui: z.record(z.string(), z.unknown()),
+  ui: UiSchema,
 });
 
 export const SettingsSchema = SettingsBaseSchema.refine((s) => s.maybeThreshold <= s.autoSelectThreshold, {

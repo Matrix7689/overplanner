@@ -1,12 +1,14 @@
 import { Menu, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
+import { useThemeSync } from "../lib/theme";
 import { useStore } from "../store/useStore";
 import { Sidebar } from "./Sidebar";
 
 export function Layout() {
   const [navOpen, setNavOpen] = useState(false);
   const { pathname } = useLocation();
+  useThemeSync();
 
   // Close the mobile drawer whenever the route changes.
   useEffect(() => setNavOpen(false), [pathname]);

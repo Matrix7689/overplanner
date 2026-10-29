@@ -1,22 +1,51 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import type { ClassifyResult } from "../../shared/types";
+import type { ClassifyResult, Theme } from "../../shared/types";
 import { PageHeader } from "../components/PageHeader";
 import { api } from "../lib/api";
 import { backupFailed } from "../lib/backup";
 import { formatDateTime } from "../lib/dates";
 import { useStore } from "../store/useStore";
 
+const THEMES: { value: Theme; label: string }[] = [
+  { value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
+
 export function SettingsPage() {
   const settings = useStore((s) => s.settings);
   const categories = useStore((s) => s.categories);
   const updateSettings = useStore((s) => s.updateSettings);
+  const setTheme = useStore((s) => s.setTheme);
 
   return (
     <>
       <PageHeader title="Settings" />
 
       <div className="space-y-6">
+        <Section title="Appearance" description="Saved in settings.json, so it follows you across devices.">
+          <div className="inline-flex rounded-lg border border-stone-200 p-0.5 text-sm" role="radiogroup" aria-label="Theme">
+            {THEMES.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={settings.ui.theme === value}
+                onClick={() => setTheme(value)}
+                className={`rounded-md px-3 py-1 ${
+                  settings.ui.theme === value ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {settings.ui.theme === "system" && (
+            <p className="text-xs text-stone-400">Follows your device's light or dark setting.</p>
+          )}
+        </Section>
+
         <Section title="Classification thresholds" description="How confident a category score must be to show as a chip.">
           <Slider
             label="Auto-select at or above"

@@ -24,7 +24,8 @@ export class SettingsRepo {
 
   update(patch: z.output<typeof SettingsPatchSchema>): Promise<Settings> {
     return withWriteLock(async () => {
-      const next = SettingsSchema.parse({ ...this.value, ...patch });
+      // `ui` is merged key by key so one preference never wipes the others.
+      const next = SettingsSchema.parse({ ...this.value, ...patch, ui: { ...this.value.ui, ...patch.ui } });
       await writeJsonFile(this.file, SettingsSchema, next);
       this.value = next;
       return next;

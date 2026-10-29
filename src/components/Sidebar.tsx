@@ -3,8 +3,10 @@ import {
   Code2,
   Inbox,
   LayoutDashboard,
+  Moon,
   Search,
   Settings,
+  Sun,
   TrendingUp,
   X,
   type LucideIcon,
@@ -12,6 +14,7 @@ import {
 import { useMemo, useState, type FormEvent } from "react";
 import { NavLink, useNavigate } from "react-router";
 import type { CategoryDef } from "../../shared/types";
+import { resolveTheme } from "../lib/theme";
 import { inboxItems, openCountBySlug, useStore } from "../store/useStore";
 
 type Props = {
@@ -34,7 +37,7 @@ export function Sidebar({ open, onClose }: Props) {
     <>
       {/* Backdrop for the mobile drawer */}
       <div
-        className={`fixed inset-0 z-30 bg-stone-900/40 transition-opacity md:hidden ${
+        className={`fixed inset-0 z-30 bg-black/40 transition-opacity md:hidden ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={onClose}
@@ -101,10 +104,32 @@ export function Sidebar({ open, onClose }: Props) {
           <ul className="space-y-0.5">
             <MainLink to="/dev" icon={Code2} label="Dev" />
             <MainLink to="/settings" icon={Settings} label="Settings" />
+            <li>
+              <ThemeToggle />
+            </li>
           </ul>
         </div>
       </aside>
     </>
+  );
+}
+
+// Flips between light and dark; the "System" choice lives in Settings.
+function ThemeToggle() {
+  const theme = useStore((s) => s.settings.ui.theme);
+  const setTheme = useStore((s) => s.setTheme);
+  const isDark = resolveTheme(theme) === "dark";
+  const Icon = isDark ? Sun : Moon;
+
+  return (
+    <button
+      type="button"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="flex w-full items-center gap-3 rounded-md px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+    >
+      <Icon className="size-4 shrink-0" />
+      {isDark ? "Light mode" : "Dark mode"}
+    </button>
   );
 }
 

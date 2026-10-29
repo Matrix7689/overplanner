@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 - 2026-10-29
+
+- Dark mode: System, Light or Dark, chosen in Settings or with the sidebar toggle
+- Saved in `settings.json` as `ui.theme`; applied before first paint to avoid a light flash
+- `ui` settings are merged key by key, so saving one preference never wipes another
+
 ## 0.4.0 - 2026-10-29
 
 - Phase 4 backups: every 6 hours (node-cron), `data/` is copied into a new `overplanner-YYYY-MM-DD_HHMMSS` folder in the backup folder (a Google Drive for desktop path)

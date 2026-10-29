@@ -72,7 +72,7 @@ All data is in `data/`:
 - `categories.json` master list (tracked in git as the seed)
 - `categories/<slug>.json` items, one file per category or list. An item with several categories is stored once, in the file of its first category
 - `inbox.json` items with no category
-- `settings.json` thresholds, backup path, UI preferences
+- `settings.json` thresholds, backup path, UI preferences (`ui.theme`: `system`, `light` or `dark`)
 - `feedback.json` classification corrections
 - `backup.json` outcome of the last backups
 

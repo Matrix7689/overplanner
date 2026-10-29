@@ -9,6 +9,7 @@ import type {
   ItemStatus,
   Settings,
   SettingsPatch,
+  Theme,
   UpdateItemInput,
 } from "../../shared/types";
 import { api } from "../lib/api";
@@ -39,6 +40,7 @@ type State = {
   setStatus: (id: string, status: ItemStatus) => Promise<void>;
   setCategories: (id: string, categories: string[]) => Promise<void>;
   updateSettings: (patch: SettingsPatch) => void;
+  setTheme: (theme: Theme) => void;
 };
 
 const LOAD_ATTEMPTS = 5;
@@ -92,6 +94,10 @@ export const useStore = create<State>()((set, get) => {
         // Leave the previous status in place.
       }
     },
+
+    // Applies at once (useThemeSync reacts to the store) and saves to
+    // settings.json under ui.theme.
+    setTheme: (theme) => get().updateSettings({ ui: { theme } }),
 
     refreshBackup: async () => {
       try {
@@ -157,8 +163,8 @@ export const useStore = create<State>()((set, get) => {
     // Applied locally at once and saved after a short pause, so dragging a
     // slider doesn't write settings.json on every step.
     updateSettings: (patch) => {
-      set((s) => ({ settings: { ...s.settings, ...patch } }));
-      pendingSettings = { ...pendingSettings, ...patch };
+      set((s) => ({ settings: { ...s.settings, ...patch, ui: { ...s.settings.ui, ...patch.ui } } }));
+      pendingSettings = { ...pendingSettings, ...patch, ui: { ...pendingSettings.ui, ...patch.ui } };
       clearTimeout(settingsTimer);
       settingsTimer = setTimeout(async () => {
         const toSave = pendingSettings;

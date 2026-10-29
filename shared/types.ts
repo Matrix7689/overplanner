@@ -15,6 +15,7 @@ import type {
   ItemStatusSchema,
   SettingsPatchSchema,
   SettingsSchema,
+  ThemeSchema,
   UpdateItemSchema,
 } from "./schemas";
 
@@ -74,6 +75,7 @@ export type BackupStatus = BackupState & {
   nextRunAt: string | null;
 };
 
+export type Theme = z.infer<typeof ThemeSchema>;
 export type Settings = z.infer<typeof SettingsSchema>;
 export type SettingsPatch = z.input<typeof SettingsPatchSchema>;
 
@@ -82,7 +84,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maybeThreshold: 0.4,
   backupPath: "",
   backupKeep: 28, // one week of 6-hourly backups
-  ui: {},
+  ui: { theme: "system" },
 };
 
 // Deleted items are purged this many days after deletedAt.
