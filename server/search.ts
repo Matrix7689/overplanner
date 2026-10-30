@@ -6,7 +6,7 @@ import type { CategoryRepo } from "./categories";
 import type { ItemRepo } from "./items";
 
 type Query = z.output<typeof ItemQuerySchema>;
-type Doc = { item: Item; categoryNames: string[] };
+type Doc = { item: Item; categoryNames: string[]; checklist: string[] };
 
 // Local search with Fuse.js. The index covers every non-deleted item and is
 // rebuilt whenever the item store changes. No model calls.
@@ -48,13 +48,19 @@ export class SearchIndex {
       .map((item) => ({
         item,
         categoryNames: item.categories.map((slug) => this.categories.get(slug)?.name ?? slug),
+        checklist: item.checklist.map((e) => e.text),
       }));
 
+    // Tasks have `notes`, notes have `body` and `links`; Fuse skips keys an
+    // item doesn't have. ignoreLocation lets matches deep in long bodies count.
     return new Fuse(docs, {
       keys: [
         { name: "item.title", weight: 3 },
         { name: "item.tags", weight: 2 },
         { name: "item.notes", weight: 1 },
+        { name: "item.body", weight: 1 },
+        { name: "item.links", weight: 1 },
+        { name: "checklist", weight: 1 },
         { name: "categoryNames", weight: 1 },
       ],
       threshold: 0.35,
@@ -65,11 +71,13 @@ export class SearchIndex {
 
 function filterFor(query: Query): (item: Item) => boolean {
   return (item) => {
+    if (query.kind && (query.kind === "note") !== (item.kind === "note")) return false;
     if (query.status && item.status !== query.status) return false;
     if (query.category && !item.categories.includes(query.category)) return false;
     if (query.source && item.source !== query.source) return false;
     if (query.dueFrom || query.dueTo) {
-      if (!item.dueDate) return false;
+      // Only tasks have due dates.
+      if (item.kind === "note" || !item.dueDate) return false;
       if (query.dueFrom && item.dueDate < query.dueFrom) return false;
       if (query.dueTo && item.dueDate > query.dueTo) return false;
     }

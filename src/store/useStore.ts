@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { DEFAULT_SETTINGS } from "../../shared/types";
+import { DEFAULT_SETTINGS, isCurrent } from "../../shared/types";
 import type {
   BackupStatus,
   CategoryDef,
@@ -35,6 +35,11 @@ type State = {
   forceBackup: () => Promise<void>;
   dismissNotice: () => void;
 
+  // The item open in the editor, if any.
+  editingId: string | null;
+  openEditor: (id: string) => void;
+  closeEditor: () => void;
+
   // Mutations return null when the server rejects them (the notice says why).
   addItem: (input: CreateItemInput) => Promise<Item | null>;
   updateItem: (id: string, patch: UpdateItemInput) => Promise<Item | null>;
@@ -68,6 +73,10 @@ export const useStore = create<State>()((set, get) => {
     settings: DEFAULT_SETTINGS,
     classifier: null,
     backup: null,
+    editingId: null,
+
+    openEditor: (id) => set({ editingId: id }),
+    closeEditor: () => set({ editingId: null }),
 
     load: async () => {
       set({ status: "loading", loadError: null });
@@ -225,14 +234,16 @@ export function inCategories(items: Item[], slugs: Set<string>): Item[] {
   return items.filter((it) => it.status !== "deleted" && it.categories.some((s) => slugs.has(s)));
 }
 
+// Open tasks and active notes that have no category yet.
 export function inboxItems(items: Item[]): Item[] {
-  return items.filter((it) => it.status === "open" && it.categories.length === 0);
+  return items.filter((it) => isCurrent(it) && it.categories.length === 0);
 }
 
+// Open tasks plus active notes per category.
 export function openCountBySlug(items: Item[]): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const it of items) {
-    if (it.status !== "open") continue;
+    if (!isCurrent(it)) continue;
     for (const slug of it.categories) counts[slug] = (counts[slug] ?? 0) + 1;
   }
   return counts;

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { isTask } from "../../shared/types";
 import { PageHeader } from "../components/PageHeader";
 import { addDays, startOfWeek, toLocalISODate } from "../lib/dates";
 import { useStore } from "../store/useStore";
@@ -12,7 +13,8 @@ export function ResultsPage() {
   const categories = useStore((s) => s.categories);
 
   const stats = useMemo(() => {
-    const done = items.filter((it) => it.status === "done" && it.completedAt);
+    // Completed tasks only; notes are never "done".
+    const done = items.filter(isTask).filter((it) => it.status === "done" && it.completedAt);
     const weekStart = startOfWeek().toISOString();
     const thisWeek = done.filter((it) => it.completedAt! >= weekStart).length;
 

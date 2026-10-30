@@ -1,7 +1,7 @@
 {
   "name": "overplanner",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
@@ -18,7 +18,9 @@
     "node-cron": "^4.6.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
     "react-router": "^7.6.0",
+    "remark-gfm": "^4.0.1",
     "tsx": "^4.23.15",
     "zod": "^4.6.7",
     "zustand": "^5.0.5"

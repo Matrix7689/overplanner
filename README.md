@@ -83,10 +83,10 @@ Everything except `categories.json` is personal data and is git-ignored. Writes 
 | Method | Path | |
 |---|---|---|
 | GET | `/api/categories` | Master list |
-| GET | `/api/items` | Open and done items. Query: `q`, `status`, `category`, `source`, `dueFrom`, `dueTo` |
+| GET | `/api/items` | Tasks and notes (never deleted ones). Query: `q`, `kind` (`task`/`note`), `status` (`open`/`done`/`active`/`archived`), `category`, `source`, `dueFrom`, `dueTo` |
 | GET | `/api/items/:id` | One item |
-| POST | `/api/items` | Create |
-| PATCH | `/api/items/:id` | Update title, notes, categories, kind, status, dueDate, tags, classification |
+| POST | `/api/items` | Create a task (`kind` `task`/`list-item`, default) or a note (`kind: "note"`, `body`) |
+| PATCH | `/api/items/:id` | Update any fields; changing `kind` converts between task and note and keeps the id |
 | DELETE | `/api/items/:id` | Soft delete; purged 30 days later |
 | POST | `/api/classify` | `{ text, jev? }` → scores per category. `jev: false` for keyword rules only |
 | GET | `/api/classify/status` | JEV configured, last call, number of corrections |

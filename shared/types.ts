@@ -5,14 +5,17 @@ import type {
   BackupStateSchema,
   CategoryDefSchema,
   ClassificationSchema,
+  ChecklistEntrySchema,
   ClassifyRequestSchema,
-  CreateItemSchema,
+  CreateItemUnion,
   FeedbackEntrySchema,
   ItemKindSchema,
   ItemQuerySchema,
   ItemSchema,
   ItemSourceSchema,
   ItemStatusSchema,
+  NoteSchema,
+  TaskSchema,
   SettingsPatchSchema,
   SettingsSchema,
   SidebarSectionSchema,
@@ -23,13 +26,42 @@ import type {
 export type CategoryDef = z.infer<typeof CategoryDefSchema>;
 export type CategoryKind = CategoryDef["kind"];
 
-export type Item = z.infer<typeof ItemSchema>;
+export type Task = z.infer<typeof TaskSchema>;
+export type Note = z.infer<typeof NoteSchema>;
+export type Item = z.infer<typeof ItemSchema>; // Task | Note
 export type ItemKind = z.infer<typeof ItemKindSchema>;
 export type ItemStatus = z.infer<typeof ItemStatusSchema>;
 export type ItemSource = z.infer<typeof ItemSourceSchema>;
+export type ChecklistEntry = z.infer<typeof ChecklistEntrySchema>;
 export type ClassificationMethod = z.infer<typeof ClassificationSchema>["method"];
 
-export type CreateItemInput = z.input<typeof CreateItemSchema>;
+export function isNote(item: Item): item is Note {
+  return item.kind === "note";
+}
+
+export function isTask(item: Item): item is Task {
+  return item.kind !== "note";
+}
+
+// Open tasks and active notes: what a category "has" right now.
+export function isCurrent(item: Item): boolean {
+  return item.status === "open" || item.status === "active";
+}
+
+// The text classification and feedback work on.
+export function itemText(item: Item): string {
+  const extra = isNote(item) ? item.body : item.notes;
+  return [item.title, extra].filter(Boolean).join("\n");
+}
+
+// A note's display title: its title, else the first line of its body.
+export function displayTitle(item: Item): string {
+  if (item.title) return item.title;
+  const firstLine = isNote(item) ? item.body.split("\n").find((l) => l.trim()) : undefined;
+  return firstLine?.replace(/^[#>*\-\s]+/, "").trim() || (item.checklist[0]?.text ?? "Untitled");
+}
+
+export type CreateItemInput = z.input<typeof CreateItemUnion>;
 export type UpdateItemInput = z.input<typeof UpdateItemSchema>;
 export type ItemQuery = z.input<typeof ItemQuerySchema>;
 

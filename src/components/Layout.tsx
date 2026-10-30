@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useThemeSync } from "../lib/theme";
 import { useStore } from "../store/useStore";
+import { ItemEditor } from "./ItemEditor";
 import { Sidebar } from "./Sidebar";
 
 export function Layout() {
@@ -32,6 +33,8 @@ export function Layout() {
             <Search className="size-5" />
           </Link>
         </header>
+
+        <ItemEditor />
 
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">

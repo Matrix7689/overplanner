@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { FeedbackFileSchema } from "../shared/schemas";
-import type { FeedbackEntry, Item, Settings } from "../shared/types";
+import { itemText, type FeedbackEntry, type Item, type Settings } from "../shared/types";
 import type { JevExamples } from "./classify/jev";
 import { readJsonFile, withWriteLock, writeJsonFile } from "./jsonFile";
 
@@ -77,7 +77,7 @@ export class FeedbackRepo {
       at: new Date().toISOString(),
       event,
       itemId: item.id,
-      text: item.notes ? `${item.title}\n${item.notes}` : item.title,
+      text: itemText(item),
       method: item.classification.method,
       scores: item.classification.scores,
       suggested,

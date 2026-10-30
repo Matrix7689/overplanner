@@ -29,8 +29,11 @@ html.dark {
   --color-red-600: #f87171;
   --color-red-800: #fca5a5;
   --color-amber-50: #2a2008;
+  --color-amber-100: #3a2c0a;
   --color-amber-700: #fbbf24;
   --color-amber-800: #fcd34d;
+  --color-sky-700: #7dd3fc;
+  --color-sky-900: #bae6fd;
 }
 
 html,

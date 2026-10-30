@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Item } from "../../shared/types";
+import { isTask, type Item, type Task } from "../../shared/types";
 import { ItemList } from "../components/ItemRow";
 import { PageHeader } from "../components/PageHeader";
 import { formatDueLabel, todayISO } from "../lib/dates";
@@ -13,9 +13,10 @@ export function CalendarPage() {
   const items = useStore((s) => s.items);
 
   const { groups, undatedCount } = useMemo(() => {
-    const open = items.filter((it) => it.status === "open");
+    // Tasks only: notes have no due date.
+    const open = items.filter(isTask).filter((it) => it.status === "open");
     const dated = open
-      .filter((it): it is Item & { dueDate: string } => it.dueDate !== null)
+      .filter((it): it is Task & { dueDate: string } => it.dueDate !== null)
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
     const today = todayISO();

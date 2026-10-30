@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 - 2026-10-30
+
+- Notes: a note is now its own item type with a Markdown body, extracted links and an archive state; tasks keep notes, due dates and open/done
+- Checklists and pinning on every item; existing items upgraded in place on load
+- Item editor: click any task or note to edit title, details or body (with Markdown preview), due date, checklist, categories, tags, pin, and switch between Task and Note
+- Quick Add: Task | Note switch, multi-line input (Shift+Enter); Note is pre-selected for long text, line breaks or links
+- Category pages show notes as a card grid (pinned first, archived behind a toggle); Dashboard cards show a notes count; Calendar and Results count tasks only
+- Search covers note bodies, links and checklist text, with Type and note status filters
+
 ## 0.7.0 - 2026-10-30
 
 - Categories revised from the Keep and WhatsApp analysis: new Family, Health, Life Admin, Home, Career, Personal and Miscellaneous

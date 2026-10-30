@@ -1,6 +1,6 @@
 import { Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { Item } from "../../shared/types";
+import { itemText, type Item } from "../../shared/types";
 import { CategoryChips } from "../components/CategoryChips";
 import { ItemRow } from "../components/ItemRow";
 import { PageHeader } from "../components/PageHeader";
@@ -37,7 +37,7 @@ export function InboxPage() {
 
 function InboxRow({ item }: { item: Item }) {
   const updateItem = useStore((s) => s.updateItem);
-  const text = item.notes ? `${item.title}\n${item.notes}` : item.title;
+  const text = itemText(item);
   const suggestions = useSuggestions(text, { autoJev: false });
   const [saving, setSaving] = useState(false);
 

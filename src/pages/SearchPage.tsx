@@ -6,7 +6,7 @@ import { PageHeader } from "../components/PageHeader";
 import { api } from "../lib/api";
 import { useStore } from "../store/useStore";
 
-const FILTER_KEYS = ["status", "category", "source", "dueFrom", "dueTo"] as const;
+const FILTER_KEYS = ["kind", "status", "category", "source", "dueFrom", "dueTo"] as const;
 
 const SOURCES: { value: string; label: string }[] = [
   { value: "manual", label: "Manual" },
@@ -76,10 +76,17 @@ export function SearchPage() {
       />
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+        <Select label="Type" value={params.get("kind") ?? ""} onChange={(v) => update("kind", v)}>
+          <option value="">Tasks and notes</option>
+          <option value="task">Tasks</option>
+          <option value="note">Notes</option>
+        </Select>
         <Select label="Status" value={params.get("status") ?? ""} onChange={(v) => update("status", v)}>
-          <option value="">Open and done</option>
-          <option value="open">Open</option>
-          <option value="done">Done</option>
+          <option value="">Any status</option>
+          <option value="open">Open tasks</option>
+          <option value="done">Done tasks</option>
+          <option value="active">Active notes</option>
+          <option value="archived">Archived notes</option>
         </Select>
         <Select label="Category" value={params.get("category") ?? ""} onChange={(v) => update("category", v)}>
           <option value="">All categories</option>

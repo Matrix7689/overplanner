@@ -1,12 +1,16 @@
-import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { z } from "zod";
-import { ItemsFileSchema, type CreateItemSchema, type UpdateItemSchema } from "../shared/schemas";
+import { z } from "zod";
+import { ItemSchema, ItemsFileSchema, type CreateItemSchema, type UpdateItemSchema } from "../shared/schemas";
 import { DELETE_HOLD_DAYS, type Item } from "../shared/types";
 import type { CategoryRepo } from "./categories";
 import { HttpError } from "./errors";
+import { applyPatch, createItem, upgradeLegacyItem } from "./itemModel";
 import { readJsonFile, withWriteLock, writeJsonFile } from "./jsonFile";
+
+// Files are read loosely first so items saved before notes and checklists
+// existed can be upgraded, then each item is validated.
+const RawItemsFileSchema = z.array(z.record(z.string(), z.unknown()));
 
 type CreateInput = z.output<typeof CreateItemSchema>;
 type UpdateInput = z.output<typeof UpdateItemSchema>;
@@ -53,8 +57,19 @@ export class ItemRepo {
     const items = new Map<string, Item>();
     const sourceFile = new Map<string, string>();
     const misplaced = new Set<string>(); // files to rewrite once loading is done
+    let upgradedCount = 0;
     for (const file of files) {
-      for (const item of await readJsonFile(file, ItemsFileSchema, () => [])) {
+      for (const raw of await readJsonFile(file, RawItemsFileSchema, () => [])) {
+        const { item: candidate, upgraded } = upgradeLegacyItem(raw);
+        const parsed = ItemSchema.safeParse(candidate);
+        if (!parsed.success) {
+          throw new Error(`${file}: item ${String(raw.id)} failed validation:\n${z.prettifyError(parsed.error)}`);
+        }
+        const item = parsed.data;
+        if (upgraded) {
+          upgradedCount++;
+          misplaced.add(file); // rewrite in the new format
+        }
         const existing = items.get(item.id);
         if (existing) {
           // Possible after an interrupted move between files. Keep the newest.
@@ -70,6 +85,7 @@ export class ItemRepo {
     }
 
     this.items = items;
+    if (upgradedCount > 0) console.log(`Upgraded ${upgradedCount} item(s) to the notes and checklists format.`);
     if (misplaced.size > 0) await withWriteLock(() => this.persist(misplaced));
     this.emitChange();
   }
@@ -89,16 +105,7 @@ export class ItemRepo {
   create(input: CreateInput): Promise<Item> {
     return withWriteLock(async () => {
       this.assertCategories(input.categories);
-      const now = new Date().toISOString();
-      const item: Item = {
-        id: randomUUID(),
-        ...input,
-        status: "open",
-        completedAt: null,
-        deletedAt: null,
-        createdAt: now,
-        updatedAt: now,
-      };
+      const item = createItem(input, new Date().toISOString());
 
       this.items.set(item.id, item);
       try {
@@ -119,12 +126,7 @@ export class ItemRepo {
       if (!prev || prev.status === "deleted") throw new HttpError(404, "Item not found");
       if (patch.categories) this.assertCategories(patch.categories);
 
-      const now = new Date().toISOString();
-      const next: Item = { ...prev, ...patch, updatedAt: now };
-      if (patch.status && patch.status !== prev.status) {
-        next.completedAt = patch.status === "done" ? now : null;
-        next.deletedAt = patch.status === "deleted" ? now : null;
-      }
+      const next = applyPatch(prev, patch, new Date().toISOString());
 
       this.items.set(id, next);
       try {
@@ -138,8 +140,8 @@ export class ItemRepo {
     });
   }
 
-  // Removes deleted items whose 30-day hold has passed. Open and done items
-  // are never touched.
+  // Removes deleted items (tasks and notes) whose 30-day hold has passed.
+  // Nothing else is ever touched.
   purgeDeleted(now = Date.now()): Promise<number> {
     return withWriteLock(async () => {
       const cutoff = now - DELETE_HOLD_DAYS * DAY_MS;

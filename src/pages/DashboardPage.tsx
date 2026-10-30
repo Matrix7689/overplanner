@@ -1,7 +1,7 @@
-import { CloudUpload, Loader2 } from "lucide-react";
+import { CloudUpload, Loader2, StickyNote } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import type { CategoryDef, Item } from "../../shared/types";
+import { isNote, isTask, type CategoryDef, type Item } from "../../shared/types";
 import { ItemList } from "../components/ItemRow";
 import { PageHeader } from "../components/PageHeader";
 import { QuickAdd } from "../components/QuickAdd";
@@ -18,11 +18,20 @@ export function DashboardPage() {
 
   // One card per top-level category shown on the Dashboard; each card also
   // holds its subcategories' open items.
+  // Cards list open tasks; notes show only as a count.
   const cards = useMemo(() => {
-    const open = items.filter((it) => it.status === "open");
+    const openTasks = items.filter((it) => isTask(it) && it.status === "open");
+    const activeNotes = items.filter((it) => isNote(it) && it.status === "active");
     return categories
       .filter((c) => c.parent === null && c.showOnDashboard)
-      .map((c) => ({ category: c, items: inCategories(open, withDescendants(categories, c.slug)) }));
+      .map((c) => {
+        const family = withDescendants(categories, c.slug);
+        return {
+          category: c,
+          items: inCategories(openTasks, family).sort((a, b) => Number(b.pinned) - Number(a.pinned)),
+          noteCount: inCategories(activeNotes, family).length,
+        };
+      });
   }, [categories, items]);
 
   const greeting = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
@@ -59,8 +68,8 @@ export function DashboardPage() {
         <h2 className="mb-3 text-sm font-medium text-stone-500">Categories</h2>
         {/* Masonry like Google Keep: columns fill the width, cards stack down. */}
         <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5">
-          {cards.map(({ category, items }) => (
-            <Swimlane key={category.slug} category={category} items={items} />
+          {cards.map(({ category, items, noteCount }) => (
+            <Swimlane key={category.slug} category={category} items={items} noteCount={noteCount} />
           ))}
         </div>
       </section>
@@ -68,7 +77,7 @@ export function DashboardPage() {
   );
 }
 
-function Swimlane({ category, items }: { category: CategoryDef; items: Item[] }) {
+function Swimlane({ category, items, noteCount }: { category: CategoryDef; items: Item[]; noteCount: number }) {
   const shown = items.slice(0, LANE_LIMIT);
   const more = items.length - shown.length;
 
@@ -90,13 +99,23 @@ function Swimlane({ category, items }: { category: CategoryDef; items: Item[] })
           <ItemList items={shown} hideCategory={category.slug} compact />
         )}
       </div>
-      {more > 0 && (
-        <Link
-          to={`/category/${category.slug}`}
-          className="border-t border-stone-100 px-4 py-2 text-xs text-stone-500 hover:text-stone-800"
-        >
-          +{more} more
-        </Link>
+      {(more > 0 || noteCount > 0) && (
+        <div className="flex items-center gap-3 border-t border-stone-100 px-4 py-2 text-xs text-stone-500">
+          {more > 0 && (
+            <Link to={`/category/${category.slug}`} className="hover:text-stone-800">
+              +{more} more
+            </Link>
+          )}
+          {noteCount > 0 && (
+            <Link
+              to={`/category/${category.slug}#notes`}
+              className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-amber-800 hover:bg-amber-100"
+            >
+              <StickyNote className="size-3" />
+              {noteCount} note{noteCount === 1 ? "" : "s"}
+            </Link>
+          )}
+        </div>
       )}
     </div>
   );
