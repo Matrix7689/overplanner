@@ -16,13 +16,15 @@ export class Classifier {
   ) {}
 
   async classify(text: string, useJev: boolean): Promise<ClassifyResult> {
-    const keyword = keywordScores(text, this.categories.all());
+    // Categories such as Miscellaneous are filed by hand only.
+    const candidates = this.categories.all().filter((c) => c.suggest);
+    const keyword = keywordScores(text, candidates);
 
     if (!this.jev.configured) return { scores: keyword, method: "keyword", jev: { status: "off" } };
     if (!useJev) return { scores: keyword, method: "keyword", jev: { status: "skipped" } };
 
     try {
-      const jev = await this.jev.score(text, this.categories.all(), this.feedback.examples());
+      const jev = await this.jev.score(text, candidates, this.feedback.examples());
       const scores: Record<string, number> = {};
       for (const slug of new Set([...Object.keys(jev), ...Object.keys(keyword)])) {
         scores[slug] = round2(Math.max(jev[slug] ?? 0, keyword[slug] ?? 0));

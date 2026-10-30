@@ -7,7 +7,7 @@ import { PageHeader } from "../components/PageHeader";
 import { QuickAdd } from "../components/QuickAdd";
 import { backupFailed } from "../lib/backup";
 import { formatDateTime } from "../lib/dates";
-import { useStore } from "../store/useStore";
+import { inCategories, useStore, withDescendants } from "../store/useStore";
 
 const LANE_LIMIT = 5;
 
@@ -16,14 +16,14 @@ export function DashboardPage() {
   const items = useStore((s) => s.items);
   const [lastAdded, setLastAdded] = useState<{ title: string; categories: string[] } | null>(null);
 
-  const openBySlug = useMemo(() => {
-    const map: Record<string, Item[]> = {};
-    for (const it of items) {
-      if (it.status !== "open") continue;
-      for (const slug of it.categories) (map[slug] ??= []).push(it);
-    }
-    return map;
-  }, [items]);
+  // One card per top-level category shown on the Dashboard; each card also
+  // holds its subcategories' open items.
+  const cards = useMemo(() => {
+    const open = items.filter((it) => it.status === "open");
+    return categories
+      .filter((c) => c.parent === null && c.showOnDashboard)
+      .map((c) => ({ category: c, items: inCategories(open, withDescendants(categories, c.slug)) }));
+  }, [categories, items]);
 
   const greeting = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
@@ -59,11 +59,9 @@ export function DashboardPage() {
         <h2 className="mb-3 text-sm font-medium text-stone-500">Categories</h2>
         {/* Masonry like Google Keep: columns fill the width, cards stack down. */}
         <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5">
-          {categories
-            .filter((c) => c.parent === null)
-            .map((c) => (
-              <Swimlane key={c.slug} category={c} items={openBySlug[c.slug] ?? []} />
-            ))}
+          {cards.map(({ category, items }) => (
+            <Swimlane key={category.slug} category={category} items={items} />
+          ))}
         </div>
       </section>
     </>

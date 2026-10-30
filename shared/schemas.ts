@@ -21,6 +21,10 @@ export const CategoryDefSchema = z.object({
   // Keyword rules: plain words match whole words (plurals too); entries with
   // punctuation, such as "youtube.com" or "$", match anywhere in the text.
   keywords: z.array(z.string().min(1)).default([]),
+  // false: no Dashboard card (still in the sidebar and search).
+  showOnDashboard: z.boolean().default(true),
+  // false: never suggested by keyword rules or JEV; only filed by hand.
+  suggest: z.boolean().default(true),
 });
 
 export const CategoriesFileSchema = z.array(CategoryDefSchema);

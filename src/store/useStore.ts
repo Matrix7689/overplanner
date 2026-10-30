@@ -205,8 +205,24 @@ export const useStore = create<State>()((set, get) => {
 // Helpers that operate on plain arrays. Components select `items` from the
 // store and derive views with useMemo, so selectors never return new arrays.
 
-export function inCategory(items: Item[], slug: string): Item[] {
-  return items.filter((it) => it.status !== "deleted" && it.categories.includes(slug));
+// A category and all its subcategories (any depth).
+export function withDescendants(categories: CategoryDef[], slug: string): Set<string> {
+  const slugs = new Set([slug]);
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const c of categories) {
+      if (c.parent && slugs.has(c.parent) && !slugs.has(c.slug)) {
+        slugs.add(c.slug);
+        grew = true;
+      }
+    }
+  }
+  return slugs;
+}
+
+// Items filed under any of the given slugs, each once.
+export function inCategories(items: Item[], slugs: Set<string>): Item[] {
+  return items.filter((it) => it.status !== "deleted" && it.categories.some((s) => slugs.has(s)));
 }
 
 export function inboxItems(items: Item[]): Item[] {

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 - 2026-10-30
+
+- Categories revised from the Keep and WhatsApp analysis: new Family, Health, Life Admin, Home, Career, Personal and Miscellaneous
+- Subcategories, one level deep; a parent's card and page include them
+- Watch List is now a list; descriptions sharpened for overlapping pairs so JEV can tell them apart; keyword rules moved to match
+- `showOnDashboard` (Personal and Miscellaneous are off) and `suggest` (Miscellaneous is manual only) on categories
+- Keep label to category mapping for the upcoming importer
+
 ## 0.6.0 - 2026-10-29
 
 - Favicon: a calendar with a checkmark

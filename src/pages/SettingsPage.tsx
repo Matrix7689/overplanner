@@ -87,14 +87,23 @@ export function SettingsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {categories.map((c) => (
+                {categories
+                  .filter((c) => c.parent === null)
+                  .flatMap((top) => [top, ...categories.filter((c) => c.parent === top.slug)])
+                  .map((c) => (
                   <tr key={c.slug}>
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className={`px-4 py-2 whitespace-nowrap ${c.parent ? "pl-10" : ""}`}>
                       <span className="mr-2 inline-block size-2 rounded-full" style={{ backgroundColor: c.color }} />
                       {c.icon} {c.name}
+                      {!c.showOnDashboard && (
+                        <span className="ml-2 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">Not on Dashboard</span>
+                      )}
+                      {!c.suggest && (
+                        <span className="ml-1 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">Manual only</span>
+                      )}
                     </td>
                     <td className="px-4 py-2 font-mono text-xs text-stone-500">{c.slug}</td>
-                    <td className="px-4 py-2 text-stone-500">{c.kind}</td>
+                    <td className="px-4 py-2 text-stone-500">{c.parent ? "subcategory" : c.kind}</td>
                     <td className="px-4 py-2 text-stone-500">{c.description}</td>
                     <td className="px-4 py-2 text-xs text-stone-400">{c.keywords.join(", ") || "—"}</td>
                   </tr>

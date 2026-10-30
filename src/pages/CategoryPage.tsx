@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router";
 import { ItemList } from "../components/ItemRow";
 import { PageHeader } from "../components/PageHeader";
 import { QuickAdd } from "../components/QuickAdd";
-import { inCategory, useStore } from "../store/useStore";
+import { inCategories, useStore, withDescendants } from "../store/useStore";
 import { NotFoundPage } from "./NotFoundPage";
 
 export function CategoryPage() {
@@ -15,15 +15,17 @@ export function CategoryPage() {
   const parent = category?.parent ? categories.find((c) => c.slug === category.parent) : undefined;
   const subcategories = categories.filter((c) => c.parent === slug);
 
+  // A parent's page also lists its subcategories' items; their badges show
+  // which subcategory each belongs to.
   const { open, done } = useMemo(() => {
-    const all = inCategory(items, slug);
+    const all = inCategories(items, withDescendants(categories, slug));
     return {
       open: all.filter((it) => it.status === "open"),
       done: all
         .filter((it) => it.status === "done")
         .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? "")),
     };
-  }, [items, slug]);
+  }, [categories, items, slug]);
 
   if (!category) return <NotFoundPage />;
 
