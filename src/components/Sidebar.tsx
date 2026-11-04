@@ -9,15 +9,14 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
-  Search,
   Settings,
   Sun,
   TrendingUp,
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { NavLink, useNavigate } from "react-router";
+import { useMemo, type ReactNode } from "react";
+import { NavLink } from "react-router";
 import type { CategoryDef, SidebarSection } from "../../shared/types";
 import { resolveTheme } from "../lib/theme";
 import { inboxItems, openCountBySlug, useStore } from "../store/useStore";
@@ -84,7 +83,6 @@ export function Sidebar({ open, onClose }: Props) {
         </div>
 
         <nav className={`flex-1 overflow-x-hidden overflow-y-auto px-3 pb-4 ${compact ? "md:px-2" : ""}`}>
-          <SearchBox compact={compact} />
           <ul className="space-y-0.5">
             <MainLink to="/" icon={LayoutDashboard} label="Dashboard" compact={compact} end />
             <MainLink to="/inbox" icon={Inbox} label="Inbox" count={inboxCount} compact={compact} />
@@ -196,39 +194,6 @@ function ThemeToggle({ compact }: { compact: boolean }) {
       <Icon className="size-4 shrink-0" />
       <span className={compact ? "md:hidden" : ""}>{label}</span>
     </button>
-  );
-}
-
-function SearchBox({ compact }: { compact: boolean }) {
-  const navigate = useNavigate();
-  const [text, setText] = useState("");
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    const q = text.trim();
-    navigate(q ? `/search?${new URLSearchParams({ q })}` : "/search");
-    setText("");
-  };
-
-  return (
-    <>
-      <form onSubmit={submit} className={`relative mb-3 ${compact ? "md:hidden" : ""}`}>
-        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-stone-400" />
-        <input
-          type="search"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Search"
-          aria-label="Search"
-          className="w-full rounded-md border border-stone-200 bg-stone-50 py-1.5 pr-2 pl-8 text-sm outline-none placeholder:text-stone-400 focus:border-stone-400 focus:bg-white"
-        />
-      </form>
-      {compact && (
-        <ul className="mb-3 hidden space-y-0.5 md:block">
-          <MainLink to="/search" icon={Search} label="Search" compact />
-        </ul>
-      )}
-    </>
   );
 }
 

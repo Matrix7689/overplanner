@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import type { ClassifyResult, Theme } from "../../shared/types";
+import { useLocation } from "react-router";
 import { PageHeader } from "../components/PageHeader";
 import { api } from "../lib/api";
 import { backupFailed } from "../lib/backup";
@@ -18,6 +19,12 @@ export function SettingsPage() {
   const categories = useStore((s) => s.categories);
   const updateSettings = useStore((s) => s.updateSettings);
   const setTheme = useStore((s) => s.setTheme);
+  const { hash } = useLocation();
+
+  // Opened from a search result such as /settings#backup: scroll to it.
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [hash]);
 
   return (
     <>
@@ -291,9 +298,12 @@ function JevSection() {
   );
 }
 
+// Each section is addressable as /settings#<slug of its title>, which the top
+// search links to (e.g. "Classification thresholds" -> #classification-thresholds).
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+  const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   return (
-    <section className="rounded-xl border border-stone-200 bg-white p-4">
+    <section id={id} className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-4 target:ring-2 target:ring-stone-400">
       <h2 className="text-sm font-medium">{title}</h2>
       {description && <p className="mt-0.5 text-xs text-stone-500">{description}</p>}
       <div className="mt-4 space-y-3">{children}</div>

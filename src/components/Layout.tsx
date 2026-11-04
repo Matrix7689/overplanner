@@ -1,10 +1,11 @@
-import { Menu, Search, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, Outlet, useLocation } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { useThemeSync } from "../lib/theme";
 import { useStore } from "../store/useStore";
 import { ItemEditor } from "./ItemEditor";
 import { Sidebar } from "./Sidebar";
+import { TopSearch } from "./TopSearch";
 
 export function Layout() {
   const [navOpen, setNavOpen] = useState(false);
@@ -19,19 +20,17 @@ export function Layout() {
       <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-3 border-b border-stone-200 bg-white px-4 py-3 md:hidden">
+        {/* Top navigation bar: search everything, on every page. */}
+        <header className="flex items-center gap-3 border-b border-stone-200 bg-white px-4 py-2.5 md:px-8">
           <button
             type="button"
             onClick={() => setNavOpen(true)}
-            className="-ml-1 rounded-md p-1 text-stone-600 hover:bg-stone-100"
+            className="-ml-1 shrink-0 rounded-md p-1 text-stone-600 hover:bg-stone-100 md:hidden"
             aria-label="Open navigation"
           >
             <Menu className="size-5" />
           </button>
-          <span className="flex-1 font-semibold tracking-tight">Overplanner</span>
-          <Link to="/search" className="rounded-md p-1 text-stone-600 hover:bg-stone-100" aria-label="Search">
-            <Search className="size-5" />
-          </Link>
+          <TopSearch />
         </header>
 
         <ItemEditor />

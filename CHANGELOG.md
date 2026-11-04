@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.0 - 2026-11-05
+
+- Search moved from the sidebar to a top navigation bar on every page
+- Searches only on Enter or the search button, then shows a dropdown grouped into Categories, Tasks, Notes, Settings and Pages (up to 5 each, with a link to Advanced search for more)
+- Keyboard: Ctrl/Cmd+K focuses search, arrow keys and Enter open a result, Esc closes; tasks and notes open in the editor, settings results jump to their section
+
 ## 0.9.0 - 2026-11-05
 
 - Dashboard: at most 3 columns, filled left to right; drag cards to reorder (mouse, or long-press on touch), saved in `settings.json` as `ui.dashboardOrder`, with "Reset order"
