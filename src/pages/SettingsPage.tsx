@@ -94,7 +94,7 @@ export function SettingsPage() {
                   <tr key={c.slug}>
                     <td className={`px-4 py-2 whitespace-nowrap ${c.parent ? "pl-10" : ""}`}>
                       <span className="mr-2 inline-block size-2 rounded-full" style={{ backgroundColor: c.color }} />
-                      {c.icon} {c.name}
+                      {c.name}
                       {!c.showOnDashboard && (
                         <span className="ml-2 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">Not on Dashboard</span>
                       )}
@@ -274,7 +274,7 @@ function JevSection() {
                 return (
                   <div key={slug} className="flex items-center gap-3 text-xs">
                     <span className="w-36 shrink-0 truncate">
-                      {c?.icon} {c?.name ?? slug}
+                      {c?.name ?? slug}
                     </span>
                     <div className="h-1.5 flex-1 rounded-full bg-stone-100">
                       <div className="h-1.5 rounded-full" style={{ width: `${score * 100}%`, backgroundColor: c?.color ?? "#78716c" }} />

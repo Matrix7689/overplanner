@@ -241,7 +241,7 @@ function EditorPanel({ item, onClose }: { item: Item; onClose: () => void }) {
                 return (
                   <span key={slug} className="inline-flex items-center gap-1 rounded-full border border-stone-200 px-2 py-0.5 text-xs">
                     <span className="size-1.5 rounded-full" style={{ backgroundColor: c?.color }} />
-                    {c?.icon} {c?.name ?? slug}
+                    {c?.name ?? slug}
                     <button
                       type="button"
                       onClick={() => set({ categories: draft.categories.filter((s) => s !== slug) })}
@@ -265,7 +265,7 @@ function EditorPanel({ item, onClose }: { item: Item; onClose: () => void }) {
                   .map((c) => (
                     <option key={c.slug} value={c.slug}>
                       {c.parent ? "  " : ""}
-                      {c.icon} {c.name}
+                      {c.name}
                     </option>
                   ))}
               </select>

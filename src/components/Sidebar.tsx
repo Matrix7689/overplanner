@@ -273,9 +273,20 @@ function CategoryLink({ category, count, compact }: { category: CategoryDef; cou
       title={compact ? category.name : undefined}
       aria-label={category.name}
     >
-      <span className="w-4 shrink-0 text-center" aria-hidden>
-        {category.icon}
+      {/* A colour dot; in the icons-only sidebar, the name's first letter on
+          the category colour so categories stay tellable apart. */}
+      <span className={`flex w-4 shrink-0 justify-center ${compact ? "md:hidden" : ""}`} aria-hidden>
+        <span className="size-2 rounded-full" style={{ backgroundColor: category.color }} />
       </span>
+      {compact && (
+        <span
+          className="hidden size-5 shrink-0 items-center justify-center rounded-md text-[10px] font-semibold text-white md:flex"
+          style={{ backgroundColor: category.color }}
+          aria-hidden
+        >
+          {category.name.charAt(0)}
+        </span>
+      )}
       <span className={`flex-1 truncate ${compact ? "md:hidden" : ""}`}>{category.name}</span>
       {count ? <Count value={count} compact={compact} /> : null}
     </NavLink>

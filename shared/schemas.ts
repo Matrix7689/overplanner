@@ -199,6 +199,9 @@ const UiSchema = z.looseObject({
   theme: ThemeSchema.default("system"),
   sidebarCollapsed: z.boolean().default(false), // icons only
   collapsedSections: z.array(SidebarSectionSchema).default([]), // folded sidebar sections
+  // Dashboard card order as category slugs. Categories not listed (new ones)
+  // follow in their categories.json order. Empty means the default order.
+  dashboardOrder: z.array(z.string()).default([]),
 });
 
 const SettingsBaseSchema = z.object({
@@ -224,6 +227,7 @@ const UiPatchSchema = z.looseObject({
   theme: ThemeSchema.optional(),
   sidebarCollapsed: z.boolean().optional(),
   collapsedSections: z.array(SidebarSectionSchema).optional(),
+  dashboardOrder: z.array(z.string()).optional(),
 });
 
 export const SettingsPatchSchema = SettingsBaseSchema.omit({ ui: true }).extend({ ui: UiPatchSchema }).strict().partial();

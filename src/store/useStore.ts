@@ -49,6 +49,7 @@ type State = {
   setTheme: (theme: Theme) => void;
   toggleSidebar: () => void;
   toggleSection: (section: SidebarSection) => void;
+  setDashboardOrder: (slugs: string[]) => void;
 };
 
 const LOAD_ATTEMPTS = 5;
@@ -113,6 +114,8 @@ export const useStore = create<State>()((set, get) => {
 
     // Sidebar layout is saved with the other UI preferences.
     toggleSidebar: () => get().updateSettings({ ui: { sidebarCollapsed: !get().settings.ui.sidebarCollapsed } }),
+
+    setDashboardOrder: (slugs) => get().updateSettings({ ui: { dashboardOrder: slugs } }),
 
     toggleSection: (section) => {
       const folded = get().settings.ui.collapsedSections;

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 - 2026-11-05
+
+- Dashboard: at most 3 columns, filled left to right; drag cards to reorder (mouse, or long-press on touch), saved in `settings.json` as `ui.dashboardOrder`, with "Reset order"
+- Pinned tasks show the pin at the row's right edge so titles stay aligned; category pages group pinned tasks and notes under "Pinned" and "Others"
+- Category emojis removed everywhere (`icon` left empty in `categories.json`); categories show their colour instead, and a coloured initial in the icons-only sidebar
+
 ## 0.8.0 - 2026-10-30
 
 - Notes: a note is now its own item type with a Markdown body, extracted links and an archive state; tasks keep notes, due dates and open/done

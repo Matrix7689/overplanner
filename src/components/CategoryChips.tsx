@@ -45,7 +45,7 @@ export function CategoryChips({ scores, visible, isSelected, onToggle, onAdd, je
               style={selected ? { backgroundColor: `${c.color}26`, borderColor: `${c.color}80` } : undefined}
             >
               {selected ? <Check className="size-3" strokeWidth={3} /> : <Plus className="size-3" />}
-              <span aria-hidden>{c.icon}</span>
+              <span className="size-1.5 rounded-full" style={{ backgroundColor: c.color }} aria-hidden />
               {c.name}
               {!selected && <span className="text-stone-400">· maybe</span>}
             </button>
@@ -61,7 +61,7 @@ export function CategoryChips({ scores, visible, isSelected, onToggle, onAdd, je
           <option value="">+ Category</option>
           {addable.map((c) => (
             <option key={c.slug} value={c.slug}>
-              {c.icon} {c.name}
+              {c.name}
             </option>
           ))}
         </select>

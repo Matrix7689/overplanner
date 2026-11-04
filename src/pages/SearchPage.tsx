@@ -92,7 +92,7 @@ export function SearchPage() {
           <option value="">All categories</option>
           {categories.map((c) => (
             <option key={c.slug} value={c.slug}>
-              {c.icon} {c.name}
+              {c.name}
             </option>
           ))}
         </Select>

@@ -62,10 +62,7 @@ export function ItemRow({ item, showCategories = true, hideCategory, compact = f
       )}
 
       <button type="button" onClick={() => openEditor(item.id)} className="min-w-0 flex-1 text-left" title="Edit">
-        <p className={`flex items-center gap-1.5 text-sm break-words ${done ? "text-stone-400 line-through" : "text-stone-800"}`}>
-          {item.pinned && <Pin className="size-3 shrink-0 text-stone-400" aria-label="Pinned" />}
-          <span className="min-w-0">{title}</span>
-        </p>
+        <p className={`text-sm break-words ${done ? "text-stone-400 line-through" : "text-stone-800"}`}>{title}</p>
         {!compact && snippet && item.title && <p className="mt-0.5 truncate text-xs text-stone-500">{snippet}</p>}
         {!compact && (dueDate || badges.length > 0 || item.checklist.length > 0) && (
           <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -86,6 +83,10 @@ export function ItemRow({ item, showCategories = true, hideCategory, compact = f
           </span>
         )}
       </button>
+
+      {/* Pinned marker sits at the row's edge, level with the first line, so
+          titles stay aligned with the rows around them. */}
+      {item.pinned && <Pin className="mt-1 size-3.5 shrink-0 rotate-45 text-stone-400" aria-label="Pinned" />}
 
       <button
         type="button"

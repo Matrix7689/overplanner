@@ -77,7 +77,7 @@ export function ResultsPage() {
             {stats.byCategory.map(({ category, count }) => (
               <li key={category.slug} className="flex items-center gap-3 text-sm">
                 <span className="w-40 shrink-0 truncate">
-                  {category.icon} {category.name}
+                  {category.name}
                 </span>
                 <div className="h-2 flex-1 rounded-full bg-stone-100">
                   <div

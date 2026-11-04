@@ -118,7 +118,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maybeThreshold: 0.4,
   backupPath: "",
   backupKeep: 28, // one week of 6-hourly backups
-  ui: { theme: "system", sidebarCollapsed: false, collapsedSections: [] },
+  ui: { theme: "system", sidebarCollapsed: false, collapsedSections: [], dashboardOrder: [] },
 };
 
 // Deleted items are purged this many days after deletedAt.
