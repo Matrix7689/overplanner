@@ -1,15 +1,13 @@
-import { CalendarClock, CloudUpload, Inbox, ListTodo, Loader2, StickyNote } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { CalendarClock, Inbox, ListTodo, StickyNote } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { isNote, isTask, type CategoryDef, type Item } from "../../shared/types";
 import { ItemList } from "../components/ItemRow";
 import { PageHeader } from "../components/PageHeader";
 import { QuickAdd } from "../components/QuickAdd";
 import { SortableCardGrid } from "../components/SortableCardGrid";
-import { backupFailed } from "../lib/backup";
-import { formatDateTime, todayISO } from "../lib/dates";
+import { todayISO } from "../lib/dates";
 import { inboxItems, inCategories, useStore, withDescendants } from "../store/useStore";
-import { Button } from "../ui/Button";
 
 const LANE_LIMIT = 5;
 
@@ -67,7 +65,7 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageHeader eyebrow={date} title={greeting} actions={<BackupStatus />} />
+      <PageHeader eyebrow={date} title={greeting} />
 
       <section className="mb-6 grid grid-cols-3 gap-3">
         <Stat to="/search?kind=task&status=open" icon={<ListTodo className="size-4" />} label="Open tasks" value={stats.open} />
@@ -198,49 +196,3 @@ function Swimlane({ category, items, noteCount }: { category: CategoryDef; items
   );
 }
 
-function BackupStatus() {
-  const backup = useStore((s) => s.backup);
-  const refresh = useStore((s) => s.refreshBackup);
-  const forceBackup = useStore((s) => s.forceBackup);
-
-  // Scheduled backups happen in the background; refresh when the page
-  // comes back into view.
-  useEffect(() => {
-    void refresh();
-    const onVisible = () => document.visibilityState === "visible" && void refresh();
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [refresh]);
-
-  if (!backup) return null;
-
-  return (
-    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-caption">
-      {!backup.configured ? (
-        <span>
-          Backups are off.{" "}
-          <Link to="/settings" className="underline hover:text-title">
-            Set a folder
-          </Link>
-        </span>
-      ) : backup.running ? (
-        <span>Backing up…</span>
-      ) : (
-        <>
-          {backupFailed(backup) && (
-            <span className="font-medium text-warn" title={backup.lastError ?? undefined}>
-              Last backup failed
-            </span>
-          )}
-          <span>
-            {backup.lastSuccessAt ? `Last backed up at ${formatDateTime(backup.lastSuccessAt)}` : "Not backed up yet"}
-          </span>
-        </>
-      )}
-      <Button variant="outlined" size="xs" onClick={() => void forceBackup()} disabled={!backup.configured || backup.running}>
-        {backup.running ? <Loader2 className="size-3.5 animate-spin" /> : <CloudUpload className="size-3.5" />}
-        Force Backup
-      </Button>
-    </div>
-  );
-}

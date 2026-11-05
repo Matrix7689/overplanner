@@ -6,6 +6,7 @@ import { useStore } from "../store/useStore";
 import { Button } from "../ui/Button";
 import { ConfirmHost } from "../ui/Confirm";
 import { TooltipProvider } from "../ui/Tooltip";
+import { BackupStatus } from "./BackupStatus";
 import { ItemEditor } from "./ItemEditor";
 import { Sidebar } from "./Sidebar";
 import { TopSearch } from "./TopSearch";
@@ -41,7 +42,7 @@ export function Layout() {
       <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top navigation bar: search everything, on every page. */}
+        {/* Top navigation bar on every page: search everything, and backup status. */}
         <header className="relative z-20 flex items-center gap-3 border-b border-line/70 bg-(--glass-bg) px-4 py-2.5 backdrop-blur-xl md:px-8">
           <button
             type="button"
@@ -52,6 +53,9 @@ export function Layout() {
             <Menu className="size-5" />
           </button>
           <TopSearch />
+          <div className="ml-auto">
+            <BackupStatus />
+          </div>
         </header>
 
         <ConfirmHost />

@@ -7,6 +7,7 @@ import {
   ListChecks,
   PanelLeftClose,
   PanelLeftOpen,
+  Search,
   Settings,
   TrendingUp,
   X,
@@ -86,6 +87,7 @@ export function Sidebar({ open, onClose }: Props) {
           <ul className="space-y-0.5">
             <MainLink to="/" icon={LayoutDashboard} label="Dashboard" compact={compact} end />
             <MainLink to="/inbox" icon={Inbox} label="Inbox" count={inboxCount} compact={compact} />
+            <MainLink to="/search" icon={Search} label="Search" compact={compact} />
             <MainLink to="/calendar" icon={CalendarDays} label="Calendar" compact={compact} />
             <MainLink to="/results" icon={TrendingUp} label="Results" compact={compact} />
           </ul>
@@ -148,20 +150,20 @@ function Section({
 }) {
   return (
     <section className={compact ? "md:mt-3 md:border-t md:border-white/10 md:pt-3" : ""}>
-      <h2 className={`mt-6 mb-1 ${compact ? "md:mt-0" : ""}`}>
+      <h2 className={`mt-6 mb-1.5 ${compact ? "md:mt-0" : ""}`}>
         <Tooltip label={`${folded ? "Show" : "Hide"} ${title.toLowerCase()}`} enabled={compact}>
           <button
             type="button"
             onClick={() => onToggle(id)}
             aria-expanded={!folded}
             aria-label={title}
-            className={`flex w-full items-center gap-3 rounded-lg px-3 py-1 text-[11px] font-semibold tracking-wider uppercase transition-colors hover:text-title ${
+            className={`flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-lg font-bold tracking-tight text-title transition-colors hover:bg-white/8 ${
               compact ? "md:justify-center md:px-0 md:py-1.5" : ""
-            } ${folded && compact ? "opacity-50" : ""} text-faint`}
+            } ${folded && compact ? "opacity-50" : ""}`}
           >
-            <Icon className="size-4 shrink-0" />
+            <Icon className="size-5 shrink-0" />
             <span className={`flex-1 text-left ${compact ? "md:hidden" : ""}`}>{title}</span>
-            <ChevronDown className={`size-3.5 transition-transform ${folded ? "-rotate-90" : ""} ${compact ? "md:hidden" : ""}`} />
+            <ChevronDown className={`size-4 text-caption transition-transform ${folded ? "-rotate-90" : ""} ${compact ? "md:hidden" : ""}`} />
           </button>
         </Tooltip>
       </h2>

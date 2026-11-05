@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.0 - 2026-11-05
+
+- Sidebar: Search link below Inbox, and larger Categories and Lists headings
+- Backup status and Force Backup moved from the Dashboard to the top bar, on every page. Below large screen widths the text collapses to just the button, which turns amber if the last backup failed
+
 ## 0.12.0 - 2026-11-05
 
 - Full visual redesign in a warm coffee palette (`#1A120E`, `#3A2418`, `#6B4A2E`, `#A88462`, `#D5C4AE`, `#4A4A46`), light and dark, with Plus Jakarta Sans

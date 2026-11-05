@@ -91,7 +91,7 @@ Set the backup folder in Settings, for example `G:\My Drive\Overplanner backups`
 - Every 6 hours (00:00, 06:00, 12:00, 18:00) the whole `data/` folder is copied into a new folder named `overplanner-YYYY-MM-DD_HHMMSS`. If the PC was off at those times, a backup runs when the server starts.
 - The copy is taken while writes are paused, so it's consistent. It's written as `….partial` and renamed when complete.
 - The newest 28 snapshots are kept (adjustable). Pruning only removes `overplanner-…` folders; anything else in the folder is left alone.
-- If the folder's parent is missing (Google Drive not running), the backup fails with a message and the Dashboard shows "Last backup failed".
+- If the folder's parent is missing (Google Drive not running), the backup fails with a message and the top bar shows "Last backup failed".
 - To restore, stop the server and copy a snapshot's contents back into `data/`.
 
 ## Data
