@@ -7,6 +7,8 @@ import { ItemEditor } from "./ItemEditor";
 import { Sidebar } from "./Sidebar";
 import { TopSearch } from "./TopSearch";
 
+const ITEM_REFRESH_MS = 60_000;
+
 export function Layout() {
   const [navOpen, setNavOpen] = useState(false);
   const { pathname } = useLocation();
@@ -14,6 +16,21 @@ export function Layout() {
 
   // Close the mobile drawer whenever the route changes.
   useEffect(() => setNavOpen(false), [pathname]);
+
+  // Pick up items captured on the phone: when the window comes back into view,
+  // and once a minute while it's open.
+  const refreshItems = useStore((s) => s.refreshItems);
+  useEffect(() => {
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") void refreshItems();
+    };
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    const timer = setInterval(refreshIfVisible, ITEM_REFRESH_MS);
+    return () => {
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+      clearInterval(timer);
+    };
+  }, [refreshItems]);
 
   return (
     <div className="flex h-dvh overflow-hidden">

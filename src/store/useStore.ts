@@ -32,6 +32,7 @@ type State = {
   load: () => Promise<void>;
   refreshClassifier: () => Promise<void>;
   refreshBackup: () => Promise<void>;
+  refreshItems: () => Promise<void>;
   forceBackup: () => Promise<void>;
   dismissNotice: () => void;
 
@@ -122,6 +123,16 @@ export const useStore = create<State>()((set, get) => {
       get().updateSettings({
         ui: { collapsedSections: folded.includes(section) ? folded.filter((s) => s !== section) : [...folded, section] },
       });
+    },
+
+    // Items can arrive from elsewhere (the phone's capture app). Failures are
+    // ignored: the next refresh tries again and what's on screen stays.
+    refreshItems: async () => {
+      try {
+        set({ items: await api.items() });
+      } catch {
+        // Keep the current list.
+      }
     },
 
     refreshBackup: async () => {

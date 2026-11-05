@@ -104,6 +104,10 @@ export class ItemRepo {
 
   create(input: CreateInput): Promise<Item> {
     return withWriteLock(async () => {
+      // A retried send from an offline client: it's already here.
+      const existing = input.id ? this.items.get(input.id) : undefined;
+      if (existing) return existing;
+
       this.assertCategories(input.categories);
       const item = createItem(input, new Date().toISOString());
 

@@ -65,9 +65,12 @@ export function createApp({ categories, items, settings, search, classifier, fee
   });
 
   api.post("/items", async (req, res) => {
-    const item = await items.create(CreateItemSchema.parse(req.body));
-    await logFeedback(feedback.recordCreate(item, settings.get()));
-    res.status(201).json(item);
+    const input = CreateItemSchema.parse(req.body);
+    // A retried send from an offline client gets the item it already created.
+    const isRetry = input.id !== undefined && items.get(input.id) !== undefined;
+    const item = await items.create(input);
+    if (!isRetry) await logFeedback(feedback.recordCreate(item, settings.get()));
+    res.status(isRetry ? 200 : 201).json(item);
   });
 
   api.patch("/items/:id", async (req, res) => {

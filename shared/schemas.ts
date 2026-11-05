@@ -93,6 +93,11 @@ export const ItemsFileSchema = z.array(ItemSchema);
 // POST /api/items. `kind` defaults to "task". A note may have an empty title
 // as long as it has a body or a checklist (checked by the server).
 const createBase = {
+  // Set by clients that save offline (the capture app): a retried send with
+  // the same id returns the existing item instead of adding a duplicate, and
+  // createdAt keeps the time it was captured rather than the time it arrived.
+  id: z.string().min(1).max(64).optional(),
+  createdAt: isoDateTime.optional(),
   categories: z.array(slug).default([]),
   tags: z.array(z.string()).default([]),
   pinned: z.boolean().default(false),

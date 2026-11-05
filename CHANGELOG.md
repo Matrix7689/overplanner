@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.0 - 2026-11-05
+
+- Phase 5: capture app at `/capture/`, installable on Android as a PWA: add tasks and notes to the Inbox, one-way, in about 15KB of code
+- Works with the PC off: an offline queue on the phone sends when the PC is reachable, including in the background; safe to retry, and capture times are kept
+- Appears in Android's share menu; shared items are saved as notes
+- `POST /api/items` accepts an optional `id` and `createdAt` for clients that save offline
+- The PC app refreshes its items when the window regains focus and once a minute, so phone captures show up without a reload
+- `scripts/install-autostart.ps1` keeps the server running whenever you're signed in to Windows
+
 ## 0.10.0 - 2026-11-05
 
 - Search moved from the sidebar to a top navigation bar on every page

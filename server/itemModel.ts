@@ -12,14 +12,14 @@ const TASK_ONLY = ["notes", "dueDate"] as const;
 const NOTE_ONLY = ["body"] as const;
 
 export function createItem(input: CreateInput, now: string): Item {
-  const base = { id: randomUUID(), createdAt: now, updatedAt: now, deletedAt: null };
+  const base = { id: input.id ?? randomUUID(), createdAt: input.createdAt ?? now, updatedAt: now, deletedAt: null };
   if (input.kind === "note") {
     if (!input.title && !input.body.trim() && input.checklist.length === 0) {
       throw new HttpError(400, "A note needs a title, a body or a checklist");
     }
-    return { ...base, ...input, links: extractLinks(input), status: "active", archivedAt: null };
+    return { ...input, ...base, links: extractLinks(input), status: "active", archivedAt: null };
   }
-  return { ...base, ...input, status: "open", completedAt: null };
+  return { ...input, ...base, status: "open", completedAt: null };
 }
 
 // Applies a PATCH. Changing kind between task and note converts the item

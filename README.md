@@ -10,6 +10,7 @@ See [SPEC.md](SPEC.md) for the full specification.
 - Phase 2 (local API): Express server, JSON storage validated with Zod, item CRUD, Fuse.js search, 30-day purge of deleted items.
 - Phase 3 (classification): keyword rules, JEV client, suggestion chips in Quick Add and the Inbox, feedback logging.
 - Phase 4 (backup): 6-hourly snapshots of `data/` to a Google Drive folder, status on the Dashboard, Force Backup.
+- Phase 5 (capture): an installable capture app for the phone at `/capture/`, with an offline queue and Android's share menu.
 
 ## Run
 
@@ -30,6 +31,34 @@ npm start
 ```
 
 Then open http://localhost:3030.
+
+To keep that server running whenever you're signed in to Windows, run this once. It registers a scheduled task for your user (no admin rights needed) that restarts the server if it crashes and logs to `logs/server.log`:
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts\install-autostart.ps1
+```
+
+After pulling changes, run `npm run build` and restart the task. `npm run dev` uses the same port, so stop the task first, or set `API_PORT` to another port for that shell and for Vite.
+
+## Phone capture
+
+`/capture/` is a small separate app for the phone: a text box, a Task/Note switch and a list of what's waiting. It only ever sends items to the PC's Inbox (uncategorized, to be filed from the PC) and never downloads anything, so none of your other data is on the phone.
+
+It keeps working with the PC off. Items wait in a queue on the phone and are sent when the PC can be reached: when the app opens, every 30 seconds while it's open, with "Send now", and in the background on Android. Each item carries its own id, so a repeated send can't create a duplicate, and its capture time is kept.
+
+Setting it up (phone and PC need the same Tailscale account):
+
+1. Install [Tailscale](https://tailscale.com/download) on the PC and the phone, and sign in on both.
+2. In the [Tailscale admin console](https://login.tailscale.com/admin/dns), turn on MagicDNS and HTTPS Certificates.
+3. Start the always-on server (above), then share it on your tailnet only. This is not exposed to the internet:
+
+   ```bash
+   tailscale serve --bg 3030
+   ```
+
+4. On the phone, open `https://<pc-name>.<tailnet>.ts.net/capture/` in Chrome and choose **Add to Home screen** (or **Install app**).
+
+"Capture" then appears on the home screen and in Android's share menu. Shared items are saved as notes. The full app is at the same address without `/capture/`.
 
 ### Environment
 
