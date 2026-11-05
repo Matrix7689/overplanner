@@ -11,7 +11,8 @@ $delay = 5
 while ($true) {
   $started = Get-Date
   "=== $started starting ===" | Out-File $log -Append -Encoding utf8
-  & $Node "node_modules\tsx\dist\cli.mjs" "server/index.ts" *>> $log
+  # Plain UTF-8 lines: redirecting with *>> would write UTF-16 in Windows PowerShell.
+  & $Node "node_modules\tsx\dist\cli.mjs" "server/index.ts" 2>&1 | ForEach-Object { "$_" } | Out-File $log -Append -Encoding utf8
   "=== $(Get-Date) exited with code $LASTEXITCODE ===" | Out-File $log -Append -Encoding utf8
 
   # Ran for a while: that was a one-off, so retry quickly.
