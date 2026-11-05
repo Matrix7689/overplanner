@@ -11,6 +11,7 @@ import type {
   SettingsPatch,
   SidebarSection,
   Theme,
+  UpdateCategoryInput,
   UpdateItemInput,
 } from "../../shared/types";
 import { api } from "../lib/api";
@@ -51,6 +52,9 @@ type State = {
   toggleSidebar: () => void;
   toggleSection: (section: SidebarSection) => void;
   setDashboardOrder: (slugs: string[]) => void;
+  // Returns the server's reason if the change was refused, otherwise null.
+  updateCategory: (slug: string, patch: UpdateCategoryInput) => Promise<string | null>;
+  deleteCategory: (slug: string) => Promise<void>;
 };
 
 const LOAD_ATTEMPTS = 5;
@@ -117,6 +121,26 @@ export const useStore = create<State>()((set, get) => {
     toggleSidebar: () => get().updateSettings({ ui: { sidebarCollapsed: !get().settings.ui.sidebarCollapsed } }),
 
     setDashboardOrder: (slugs) => get().updateSettings({ ui: { dashboardOrder: slugs } }),
+
+    updateCategory: async (slug, patch) => {
+      try {
+        set({ categories: await api.updateCategory(slug, patch) });
+        return null;
+      } catch (err) {
+        return err instanceof Error ? err.message : String(err);
+      }
+    },
+
+    // The server moves the category's items, so they're read back afterwards.
+    deleteCategory: async (slug) => {
+      try {
+        const { categories } = await api.deleteCategory(slug);
+        set({ categories });
+        await get().refreshItems();
+      } catch (err) {
+        fail("delete the category", err);
+      }
+    },
 
     toggleSection: (section) => {
       const folded = get().settings.ui.collapsedSections;

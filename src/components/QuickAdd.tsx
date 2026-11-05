@@ -3,6 +3,8 @@ import { useState, type FormEvent, type KeyboardEvent } from "react";
 import type { CreateItemInput } from "../../shared/types";
 import { useSuggestions } from "../lib/useSuggestions";
 import { useStore } from "../store/useStore";
+import { Button } from "../ui/Button";
+import { Segmented } from "../ui/Segmented";
 import { CategoryChips } from "./CategoryChips";
 
 type Props = {
@@ -90,7 +92,10 @@ export function QuickAdd({ placeholder = "Add a task, note or link…", categori
   };
 
   return (
-    <form onSubmit={submit} className="space-y-2">
+    <form
+      onSubmit={submit}
+      className="card-shadow space-y-2.5 rounded-2xl border border-line bg-surface p-2.5 transition-colors focus-within:border-accent/60"
+    >
       <div className="flex items-start gap-2">
         <textarea
           value={text}
@@ -98,17 +103,23 @@ export function QuickAdd({ placeholder = "Add a task, note or link…", categori
           onKeyDown={onKeyDown}
           placeholder={placeholder}
           rows={1}
-          className="field-sizing-content max-h-60 min-h-[38px] min-w-0 flex-1 resize-none rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm shadow-xs outline-none placeholder:text-stone-400 focus:border-stone-400"
+          className="field-sizing-content max-h-60 min-h-9.5 min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-title outline-none placeholder:text-faint"
         />
-        <ModeToggle mode={mode} onChange={setChosenMode} />
-        <button
-          type="submit"
-          disabled={!trimmed || saving}
-          className="inline-flex h-[38px] items-center gap-1 rounded-lg bg-stone-900 px-3 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-40"
-        >
+        <Segmented
+          label="Type"
+          value={mode}
+          onChange={setChosenMode}
+          compactLabels
+          className="shrink-0"
+          options={[
+            { value: "task", label: "Task", icon: <CheckSquare className="size-3.5" /> },
+            { value: "note", label: "Note", icon: <StickyNote className="size-3.5" /> },
+          ]}
+        />
+        <Button type="submit" disabled={!trimmed || saving}>
           <Plus className="size-4" />
           Add
-        </button>
+        </Button>
       </div>
 
       {suggest && trimmed && (
@@ -124,29 +135,5 @@ export function QuickAdd({ placeholder = "Add a task, note or link…", categori
         />
       )}
     </form>
-  );
-}
-
-function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
-  const option = (value: Mode, label: string, Icon: typeof StickyNote) => (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={mode === value}
-      onClick={() => onChange(value)}
-      title={label}
-      className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs ${
-        mode === value ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100"
-      }`}
-    >
-      <Icon className="size-3.5" />
-      <span className="hidden sm:inline">{label}</span>
-    </button>
-  );
-  return (
-    <div role="radiogroup" aria-label="Type" className="flex h-[38px] shrink-0 items-center rounded-lg border border-stone-200 bg-white p-0.5">
-      {option("task", "Task", CheckSquare)}
-      {option("note", "Note", StickyNote)}
-    </div>
   );
 }

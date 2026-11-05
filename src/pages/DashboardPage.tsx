@@ -1,5 +1,5 @@
-import { CloudUpload, Loader2, StickyNote } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CalendarClock, CloudUpload, Inbox, ListTodo, Loader2, StickyNote } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { isNote, isTask, type CategoryDef, type Item } from "../../shared/types";
 import { ItemList } from "../components/ItemRow";
@@ -7,8 +7,9 @@ import { PageHeader } from "../components/PageHeader";
 import { QuickAdd } from "../components/QuickAdd";
 import { SortableCardGrid } from "../components/SortableCardGrid";
 import { backupFailed } from "../lib/backup";
-import { formatDateTime } from "../lib/dates";
-import { inCategories, useStore, withDescendants } from "../store/useStore";
+import { formatDateTime, todayISO } from "../lib/dates";
+import { inboxItems, inCategories, useStore, withDescendants } from "../store/useStore";
+import { Button } from "../ui/Button";
 
 const LANE_LIMIT = 5;
 
@@ -48,26 +49,52 @@ export function DashboardPage() {
   }, [cards, savedOrder]);
   const cardsBySlug = useMemo(() => new Map(cards.map((c) => [c.category.slug, c])), [cards]);
 
-  const greeting = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const now = new Date();
+  const date = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+  const stats = useMemo(() => {
+    const today = todayISO();
+    const open = items.filter(isTask).filter((it) => it.status === "open");
+    return {
+      open: open.length,
+      dueToday: open.filter((it) => it.dueDate === today).length,
+      overdue: open.filter((it) => it.dueDate !== null && it.dueDate < today).length,
+      inbox: inboxItems(items).length,
+    };
+  }, [items]);
 
   return (
     <>
-      <PageHeader title="Dashboard" subtitle={greeting} actions={<BackupStatus />} />
+      <PageHeader eyebrow={date} title={greeting} actions={<BackupStatus />} />
+
+      <section className="mb-6 grid grid-cols-3 gap-3">
+        <Stat to="/search?kind=task&status=open" icon={<ListTodo className="size-4" />} label="Open tasks" value={stats.open} />
+        <Stat
+          to="/calendar"
+          icon={<CalendarClock className="size-4" />}
+          label={stats.overdue > 0 ? `Due today · ${stats.overdue} overdue` : "Due today"}
+          value={stats.dueToday}
+          alert={stats.overdue > 0}
+        />
+        <Stat to="/inbox" icon={<Inbox className="size-4" />} label="In the Inbox" value={stats.inbox} />
+      </section>
 
       <section className="mb-8">
         <QuickAdd onAdded={(title, slugs) => setLastAdded({ title, categories: slugs })} />
         {lastAdded && (
-          <p className="mt-2 text-xs text-stone-500">
+          <p className="mt-2 px-1 text-xs text-caption">
             Added “{lastAdded.title}” to{" "}
             {lastAdded.categories.length === 0 ? (
-              <Link to="/inbox" className="underline hover:text-stone-800">
+              <Link to="/inbox" className="underline hover:text-title">
                 the Inbox
               </Link>
             ) : (
               lastAdded.categories.map((slug, i) => (
                 <span key={slug}>
                   {i > 0 && ", "}
-                  <Link to={`/category/${slug}`} className="underline hover:text-stone-800">
+                  <Link to={`/category/${slug}`} className="underline hover:text-title">
                     {categories.find((c) => c.slug === slug)?.name ?? slug}
                   </Link>
                 </span>
@@ -79,14 +106,14 @@ export function DashboardPage() {
       </section>
 
       <section>
-        <div className="mb-3 flex items-baseline gap-3">
-          <h2 className="text-sm font-medium text-stone-500">Categories</h2>
-          <span className="hidden text-xs text-stone-400 sm:inline">Drag cards to reorder</span>
+        <div className="mb-3 flex items-baseline gap-3 px-1">
+          <h2 className="text-sm font-semibold text-title">Categories</h2>
+          <span className="hidden text-xs text-faint sm:inline">Drag cards to reorder</span>
           {savedOrder.length > 0 && (
             <button
               type="button"
               onClick={() => setDashboardOrder([])}
-              className="ml-auto text-xs text-stone-500 underline hover:text-stone-800"
+              className="ml-auto text-xs text-caption underline hover:text-title"
             >
               Reset order
             </button>
@@ -105,34 +132,53 @@ export function DashboardPage() {
   );
 }
 
+function Stat({ to, icon, label, value, alert }: { to: string; icon: ReactNode; label: string; value: number; alert?: boolean }) {
+  return (
+    <Link
+      to={to}
+      className="card-shadow group flex min-w-0 flex-col justify-between gap-1 rounded-2xl border border-line bg-surface px-3 py-3 sm:px-4 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/50"
+    >
+      <span className={`flex items-center gap-1.5 text-xs font-medium ${alert ? "text-danger" : "text-caption"}`}>
+        <span className="hidden shrink-0 sm:inline">{icon}</span>
+        <span className="min-w-0 leading-tight">{label}</span>
+      </span>
+      <span className="text-2xl font-bold tracking-tight text-title">{value}</span>
+    </Link>
+  );
+}
+
 function Swimlane({ category, items, noteCount }: { category: CategoryDef; items: Item[]; noteCount: number }) {
   const shown = items.slice(0, LANE_LIMIT);
   const more = items.length - shown.length;
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white">
+    <div className="card-shadow flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/50">
       {/* draggable={false}: links would otherwise start the browser's own
-          link drag instead of moving the card. */}
+          link drag instead of moving the card. The wash of the category's
+          colour is where a background photo can go later. */}
       <Link
         to={`/category/${category.slug}`}
         draggable={false}
-        className="flex items-center gap-2 border-b border-stone-100 px-4 py-3 hover:bg-stone-50"
-        style={{ boxShadow: `inset 0 3px 0 ${category.color}` }}
+        className="flex items-center gap-2.5 px-4 py-3.5"
+        style={{ backgroundImage: `linear-gradient(115deg, ${category.color}24, transparent 72%)` }}
       >
-        <span className="flex-1 truncate text-sm font-medium">{category.name}</span>
-        <span className="text-xs tabular-nums text-stone-400">{items.length}</span>
+        <span className="cat-dot size-2.5 shrink-0 rounded-full" style={{ backgroundColor: category.color }} aria-hidden />
+        <span className="flex-1 truncate text-sm font-semibold text-title">{category.name}</span>
+        {items.length > 0 && (
+          <span className="rounded-full bg-soft px-2 py-0.5 text-[11px] font-semibold text-body tabular-nums">{items.length}</span>
+        )}
       </Link>
-      <div className="flex-1 px-4 py-1">
+      <div className="flex-1 px-4 pb-1.5">
         {shown.length === 0 ? (
-          <p className="py-3 text-sm text-stone-400">Nothing open</p>
+          <p className="py-2 text-sm text-faint">Nothing open</p>
         ) : (
           <ItemList items={shown} hideCategory={category.slug} compact />
         )}
       </div>
       {(more > 0 || noteCount > 0) && (
-        <div className="flex items-center gap-3 border-t border-stone-100 px-4 py-2 text-xs text-stone-500">
+        <div className="flex items-center gap-3 border-t border-line px-4 py-2 text-xs text-caption">
           {more > 0 && (
-            <Link to={`/category/${category.slug}`} draggable={false} className="hover:text-stone-800">
+            <Link to={`/category/${category.slug}`} draggable={false} className="hover:text-title">
               +{more} more
             </Link>
           )}
@@ -140,7 +186,7 @@ function Swimlane({ category, items, noteCount }: { category: CategoryDef; items
             <Link
               to={`/category/${category.slug}#notes`}
               draggable={false}
-              className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-amber-800 hover:bg-amber-100"
+              className="ml-auto inline-flex items-center gap-1 rounded-full bg-soft px-2 py-0.5 font-medium text-body hover:text-title"
             >
               <StickyNote className="size-3" />
               {noteCount} note{noteCount === 1 ? "" : "s"}
@@ -169,11 +215,11 @@ function BackupStatus() {
   if (!backup) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-stone-500">
+    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-caption">
       {!backup.configured ? (
         <span>
           Backups are off.{" "}
-          <Link to="/settings" className="underline hover:text-stone-800">
+          <Link to="/settings" className="underline hover:text-title">
             Set a folder
           </Link>
         </span>
@@ -182,7 +228,7 @@ function BackupStatus() {
       ) : (
         <>
           {backupFailed(backup) && (
-            <span className="font-medium text-amber-700" title={backup.lastError ?? undefined}>
+            <span className="font-medium text-warn" title={backup.lastError ?? undefined}>
               Last backup failed
             </span>
           )}
@@ -191,15 +237,10 @@ function BackupStatus() {
           </span>
         </>
       )}
-      <button
-        type="button"
-        onClick={() => void forceBackup()}
-        disabled={!backup.configured || backup.running}
-        className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50 disabled:hover:bg-white"
-      >
+      <Button variant="outlined" size="xs" onClick={() => void forceBackup()} disabled={!backup.configured || backup.running}>
         {backup.running ? <Loader2 className="size-3.5 animate-spin" /> : <CloudUpload className="size-3.5" />}
         Force Backup
-      </button>
+      </Button>
     </div>
   );
 }

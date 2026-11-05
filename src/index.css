@@ -1,39 +1,159 @@
 @import "tailwindcss";
 
+/* `dark:` applies in dark mode and inside always-dark areas such as the sidebar. */
+@custom-variant dark (&:where(.dark, .dark *, .surface-dark, .surface-dark *));
+
+/* The default palette: #1A120E #3A2418 #6B4A2E #A88462 #D5C4AE #4A4A46.
+   Those six are exact stops below and the rest are mixed from them. A custom
+   palette from Settings overrides every stop inline on <html>, using the same
+   mixes (src/lib/palette.ts), so keep the two in step. */
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-brand-50: #f7f3ef;
+  --color-brand-100: #ece4db;
+  --color-brand-200: #e6dcce;
+  --color-brand-300: #d5c4ae;
+  --color-brand-400: #bfa488;
+  --color-brand-500: #a88462;
+  --color-brand-600: #8a6748;
+  --color-brand-700: #6b4a2e;
+  --color-brand-800: #533723;
+  --color-brand-900: #3a2418;
+  --color-brand-950: #1a120e;
+  --color-brand-neutral: #4a4a46;
+
+  --animate-overlay-show: overlay-show 150ms ease-out;
+  --animate-content-show: content-show 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-pop: pop 140ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  @keyframes overlay-show {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes content-show {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
 }
 
-/* Dark mode: components use the stone scale and white, so the scale is
-   inverted here (stone-50 becomes the darkest, stone-900 the lightest) and
-   white becomes the card surface. Buttons (bg-stone-900 text-white) stay
-   high-contrast because both ends flip together. */
+/* Semantic colours used by every component: bg-surface, text-title, border-line… */
+@theme inline {
+  --color-page: var(--page-bg);
+  --color-surface: var(--ui-bg);
+  --color-soft: var(--ui-soft-bg);
+  --color-line: var(--ui-border-color);
+  --color-title: var(--title-text-color);
+  --color-body: var(--body-text-color);
+  --color-caption: var(--caption-text-color);
+  --color-faint: var(--faint-text-color);
+  --color-accent: var(--accent-color);
+  --color-link: var(--link-color);
+  --color-on-action: var(--on-action-color);
+  --color-danger: var(--danger-color);
+  --color-danger-soft: var(--danger-soft-bg);
+  --color-warn: var(--warn-color);
+  --color-warn-soft: var(--warn-soft-bg);
+  --color-ok: var(--ok-color);
+  --color-ok-soft: var(--ok-soft-bg);
+}
+
+/* Mixed text and surface colours that aren't worth a stop on the scale. */
+:root {
+  --brand-soft-dark: #462e1e;
+  --brand-caption-dark: #c2b19c;
+  --brand-faint-dark: #b9a793;
+  --brand-faint-light: #544a3f;
+}
+
+/* .surface-light and .surface-dark re-declare these tokens, so an element can
+   carry its own stops: that's how the Settings previews show a draft palette. */
+:root,
+.surface-light {
+  --page-bg: var(--color-brand-200);
+  --page-glow: radial-gradient(900px 480px at 85% -10%, color-mix(in srgb, var(--color-brand-300) 80%, transparent), transparent),
+    radial-gradient(760px 420px at 5% 110%, color-mix(in srgb, var(--color-brand-500) 14%, transparent), transparent);
+  --ui-bg: var(--color-brand-50);
+  --ui-soft-bg: var(--color-brand-100);
+  --ui-border-color: var(--color-brand-300);
+  --title-text-color: var(--color-brand-950);
+  --body-text-color: var(--color-brand-900);
+  --caption-text-color: var(--color-brand-neutral);
+  --faint-text-color: var(--brand-faint-light);
+  --accent-color: var(--color-brand-600);
+  --link-color: var(--color-brand-700);
+  --action-from: var(--color-brand-700);
+  --action-to: var(--color-brand-800);
+  --action-border: var(--color-brand-900);
+  --on-action-color: var(--color-brand-50);
+  --danger-color: #97291a;
+  --danger-soft-bg: #f5d9cf;
+  --warn-color: #6b4600;
+  --warn-soft-bg: #f3e3c0;
+  --ok-color: #255a33;
+  --ok-soft-bg: #dcebd8;
+  --overlay-bg: color-mix(in srgb, var(--color-brand-950) 35%, transparent);
+  --glass-bg: color-mix(in srgb, var(--color-brand-50) 70%, transparent);
+  --card-shadow: 0 1px 2px color-mix(in srgb, var(--color-brand-950) 5%, transparent),
+    0 10px 28px -14px color-mix(in srgb, var(--color-brand-700) 30%, transparent);
+  --pop-shadow: 0 2px 6px color-mix(in srgb, var(--color-brand-950) 8%, transparent),
+    0 24px 56px -16px color-mix(in srgb, var(--color-brand-950) 35%, transparent);
+  --dot-ring: color-mix(in srgb, var(--color-brand-950) 14%, transparent);
+  color-scheme: light;
+}
+
+html.dark,
+.surface-dark {
+  --page-bg: var(--color-brand-950);
+  --page-glow: radial-gradient(900px 480px at 85% -10%, color-mix(in srgb, var(--color-brand-700) 40%, transparent), transparent),
+    radial-gradient(760px 420px at 5% 110%, color-mix(in srgb, var(--color-brand-900) 80%, transparent), transparent);
+  --ui-bg: var(--color-brand-900);
+  --ui-soft-bg: var(--brand-soft-dark);
+  --ui-border-color: var(--color-brand-700);
+  --title-text-color: var(--color-brand-100);
+  --body-text-color: var(--color-brand-300);
+  --caption-text-color: var(--brand-caption-dark);
+  --faint-text-color: var(--brand-faint-dark);
+  --accent-color: var(--color-brand-500);
+  --link-color: var(--color-brand-300);
+  --action-from: var(--color-brand-300);
+  --action-to: var(--color-brand-500);
+  --action-border: var(--color-brand-500);
+  --on-action-color: var(--color-brand-950);
+  --danger-color: #f7a08e;
+  --danger-soft-bg: #5c2418;
+  --warn-color: #eec16a;
+  --warn-soft-bg: #5a3f10;
+  --ok-color: #9fd3a3;
+  --ok-soft-bg: #203a24;
+  --overlay-bg: rgb(0 0 0 / 0.6);
+  --glass-bg: color-mix(in srgb, var(--color-brand-950) 65%, transparent);
+  --card-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-brand-100) 6%, transparent), 0 14px 32px -18px rgb(0 0 0 / 0.75);
+  --pop-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-brand-100) 8%, transparent), 0 24px 56px -14px rgb(0 0 0 / 0.8);
+  --dot-ring: color-mix(in srgb, var(--color-brand-100) 55%, transparent);
+  --hairline: color-mix(in srgb, var(--color-brand-100) 10%, transparent);
+}
+
 html.dark {
   color-scheme: dark;
+}
 
-  --color-white: #1c1917;
-  --color-stone-50: #0c0a09;
-  --color-stone-100: #292524;
-  --color-stone-200: #3a3532;
-  --color-stone-300: #57534e;
-  --color-stone-400: #78716c;
-  --color-stone-500: #a8a29e;
-  --color-stone-600: #d6d3d1;
-  --color-stone-700: #e7e5e4;
-  --color-stone-800: #f5f5f4;
-  --color-stone-900: #fafaf9;
+@utility card-shadow {
+  box-shadow: var(--card-shadow);
+}
 
-  --color-red-50: #2a1212;
-  --color-red-100: #3b1717;
-  --color-red-200: #5c2323;
-  --color-red-600: #f87171;
-  --color-red-800: #fca5a5;
-  --color-amber-50: #2a2008;
-  --color-amber-100: #3a2c0a;
-  --color-amber-700: #fbbf24;
-  --color-amber-800: #fcd34d;
-  --color-sky-700: #7dd3fc;
-  --color-sky-900: #bae6fd;
+/* A hairline round a category dot, so dark colours like Coffee's still show
+   on dark surfaces. */
+@utility cat-dot {
+  box-shadow: 0 0 0 1px var(--dot-ring);
+}
+
+@utility pop-shadow {
+  box-shadow: var(--pop-shadow);
 }
 
 html,
@@ -43,5 +163,25 @@ body,
 }
 
 body {
-  @apply bg-stone-50 text-stone-900 antialiased;
+  background-color: var(--page-bg);
+  background-image: var(--page-glow);
+  background-attachment: fixed;
+  color: var(--body-text-color);
+  font-feature-settings: var(--font-features, "cv11", "ss01");
+  @apply antialiased;
+}
+
+/* Thin, palette-coloured scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border-color) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
 }

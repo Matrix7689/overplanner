@@ -6,7 +6,7 @@ const Markdown = lazy(() => import("./Markdown").then((m) => ({ default: m.Markd
 
 export function LazyMarkdown({ children, className }: { children: string; className?: string }) {
   return (
-    <Suspense fallback={<div className={`text-sm whitespace-pre-wrap text-stone-700 ${className ?? ""}`}>{children}</div>}>
+    <Suspense fallback={<div className={`text-sm whitespace-pre-wrap text-body ${className ?? ""}`}>{children}</div>}>
       <Markdown className={className}>{children}</Markdown>
     </Suspense>
   );

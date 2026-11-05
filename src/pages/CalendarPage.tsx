@@ -42,16 +42,16 @@ export function CalendarPage() {
       />
 
       {groups.length === 0 ? (
-        <p className="text-sm text-stone-400">No upcoming due dates.</p>
+        <p className="text-sm text-faint">No upcoming due dates.</p>
       ) : (
         <div className="space-y-6">
           {groups.map((g) => (
             <section key={g.key}>
-              <h2 className={`mb-1 text-sm font-medium ${g.overdue ? "text-red-600" : "text-stone-500"}`}>
+              <h2 className={`mb-1 text-sm font-medium ${g.overdue ? "text-danger" : "text-caption"}`}>
                 {g.label}
-                {g.key !== "overdue" && <span className="ml-2 font-normal text-stone-400">{g.key}</span>}
+                {g.key !== "overdue" && <span className="ml-2 font-normal text-faint">{g.key}</span>}
               </h2>
-              <div className="rounded-xl border border-stone-200 bg-white px-4">
+              <div className="card-shadow rounded-2xl border border-line bg-surface px-4">
                 <ItemList items={g.items} />
               </div>
             </section>

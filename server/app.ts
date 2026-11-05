@@ -7,6 +7,7 @@ import {
   CreateItemSchema,
   ItemQuerySchema,
   SettingsPatchSchema,
+  UpdateCategorySchema,
   UpdateItemSchema,
 } from "../shared/schemas";
 import type { BackupService } from "./backup";
@@ -51,6 +52,18 @@ export function createApp({ categories, items, settings, search, classifier, fee
 
   api.get("/categories", (_req, res) => {
     res.json(categories.all());
+  });
+
+  api.patch("/categories/:slug", async (req, res) => {
+    const list = await categories.update(req.params.slug, UpdateCategorySchema.parse(req.body));
+    items.notifyChanged();
+    res.json(list);
+  });
+
+  // Never deletes items: they stay in their other categories or go to the Inbox.
+  api.delete("/categories/:slug", async (req, res) => {
+    const moved = await items.removeCategory(req.params.slug);
+    res.json({ categories: categories.all(), ...moved });
   });
 
   // List and search. Deleted items are never returned.

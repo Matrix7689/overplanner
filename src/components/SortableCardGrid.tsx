@@ -90,7 +90,7 @@ export function SortableCardGrid({ ids, onReorder, renderCard }: Props) {
         ))}
       </div>
       <DragOverlay dropAnimation={null}>
-        {activeId ? <div className="rotate-1 cursor-grabbing rounded-xl shadow-2xl">{renderCard(activeId)}</div> : null}
+        {activeId ? <div className="pop-shadow rotate-1 cursor-grabbing rounded-2xl">{renderCard(activeId)}</div> : null}
       </DragOverlay>
     </DndContext>
   );
@@ -107,7 +107,7 @@ function SortableCard({ id, placeholder, children }: { id: string; placeholder: 
       }}
       {...drag.listeners}
       aria-roledescription="draggable card"
-      className={`rounded-xl transition-opacity ${placeholder ? "opacity-30" : ""}`}
+      className={`cursor-grab rounded-2xl transition-opacity active:cursor-grabbing ${placeholder ? "opacity-30" : ""}`}
     >
       {children}
     </div>

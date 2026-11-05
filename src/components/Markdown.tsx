@@ -10,7 +10,7 @@ const components: Components = {
       target="_blank"
       rel="noreferrer noopener"
       onClick={(e) => e.stopPropagation()}
-      className="break-all text-sky-700 underline hover:text-sky-900"
+      className="break-all text-link underline hover:text-title"
     >
       {children}
     </a>
@@ -21,17 +21,17 @@ const components: Components = {
   p: ({ children }) => <p className="my-1.5 first:mt-0 last:mb-0">{children}</p>,
   ul: ({ children }) => <ul className="my-1.5 list-disc pl-5">{children}</ul>,
   ol: ({ children }) => <ol className="my-1.5 list-decimal pl-5">{children}</ol>,
-  blockquote: ({ children }) => <blockquote className="my-2 border-l-2 border-stone-300 pl-3 text-stone-500">{children}</blockquote>,
-  code: ({ children }) => <code className="rounded bg-stone-100 px-1 font-mono text-[0.85em]">{children}</code>,
-  pre: ({ children }) => <pre className="my-2 overflow-x-auto rounded bg-stone-100 p-2 text-xs">{children}</pre>,
+  blockquote: ({ children }) => <blockquote className="my-2 border-l-2 border-line pl-3 text-caption">{children}</blockquote>,
+  code: ({ children }) => <code className="rounded bg-soft px-1 font-mono text-[0.85em]">{children}</code>,
+  pre: ({ children }) => <pre className="my-2 overflow-x-auto rounded bg-soft p-2 text-xs">{children}</pre>,
   table: ({ children }) => <table className="my-2 text-xs">{children}</table>,
-  th: ({ children }) => <th className="border border-stone-200 px-2 py-1 text-left">{children}</th>,
-  td: ({ children }) => <td className="border border-stone-200 px-2 py-1">{children}</td>,
+  th: ({ children }) => <th className="border border-line px-2 py-1 text-left">{children}</th>,
+  td: ({ children }) => <td className="border border-line px-2 py-1">{children}</td>,
 };
 
 export function Markdown({ children, className = "" }: { children: string; className?: string }) {
   return (
-    <div className={`text-sm leading-relaxed break-words text-stone-700 ${className}`}>
+    <div className={`text-sm leading-relaxed break-words text-body ${className}`}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {children}
       </ReactMarkdown>

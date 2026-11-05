@@ -1,7 +1,8 @@
-import { Archive, ArchiveRestore, Check, Link2, Pin, PinOff } from "lucide-react";
+import { Archive, ArchiveRestore, Link2, Pin, PinOff } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 import type { Note } from "../../shared/types";
 import { useStore } from "../store/useStore";
+import { Checkbox } from "../ui/Checkbox";
 import { LazyMarkdown as Markdown } from "./LazyMarkdown";
 
 const CHECKLIST_PREVIEW = 8;
@@ -29,12 +30,12 @@ export function NoteCard({ note }: { note: Note }) {
       tabIndex={0}
       onClick={() => openEditor(note.id)}
       onKeyDown={(e) => e.key === "Enter" && openEditor(note.id)}
-      className={`group mb-4 break-inside-avoid cursor-pointer rounded-xl border border-stone-200 bg-white p-4 transition-shadow hover:shadow-md ${
+      className={`group card-shadow mb-4 cursor-pointer break-inside-avoid rounded-2xl border border-line bg-surface p-4 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/50 ${
         archived ? "opacity-60" : ""
       }`}
     >
       <div className="flex items-start gap-2">
-        {note.title && <h3 className="min-w-0 flex-1 text-sm font-semibold break-words text-stone-900">{note.title}</h3>}
+        {note.title && <h3 className="min-w-0 flex-1 text-sm font-semibold break-words text-title">{note.title}</h3>}
         <div className={`ml-auto flex shrink-0 gap-0.5 ${note.pinned ? "" : "md:opacity-0 md:group-hover:opacity-100"}`}>
           <IconButton
             label={note.pinned ? "Unpin" : "Pin"}
@@ -61,25 +62,21 @@ export function NoteCard({ note }: { note: Note }) {
         <ul className="mt-2 space-y-1">
           {shown.map((entry) => (
             <li key={entry.id} className="flex items-start gap-2 text-sm">
-              <button
-                type="button"
-                onClick={stop(() => toggleEntry(entry.id))}
-                aria-label={entry.checked ? "Uncheck" : "Check"}
-                className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border ${
-                  entry.checked ? "border-stone-400 bg-stone-400 text-white" : "border-stone-300 hover:border-stone-500"
-                }`}
-              >
-                {entry.checked && <Check className="size-3" strokeWidth={3} />}
-              </button>
-              <span className={entry.checked ? "text-stone-400 line-through" : "text-stone-700"}>{entry.text}</span>
+              <Checkbox
+                className="mt-0.5"
+                checked={entry.checked}
+                onChange={() => void toggleEntry(entry.id)}
+                label={entry.checked ? "Uncheck" : "Check"}
+              />
+              <span className={entry.checked ? "text-faint line-through" : "text-body"}>{entry.text}</span>
             </li>
           ))}
-          {more > 0 && <li className="pl-6 text-xs text-stone-400">+{more} more</li>}
+          {more > 0 && <li className="pl-6 text-xs text-faint">+{more} more</li>}
         </ul>
       )}
 
       {note.links.length > 0 && (
-        <p className="mt-2 flex items-center gap-1 text-xs text-stone-400">
+        <p className="mt-2 flex items-center gap-1 text-xs text-faint">
           <Link2 className="size-3" /> {note.links.length} link{note.links.length === 1 ? "" : "s"}
         </p>
       )}
@@ -94,7 +91,7 @@ function IconButton({ label, onClick, children }: { label: string; onClick: (e: 
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+      className="rounded p-1 text-faint hover:bg-soft hover:text-body"
     >
       {children}
     </button>

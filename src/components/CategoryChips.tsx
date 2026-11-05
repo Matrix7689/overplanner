@@ -1,6 +1,7 @@
 import { Check, Loader2, Plus, Sparkles } from "lucide-react";
 import type { JevUiStatus } from "../lib/useSuggestions";
 import { useStore } from "../store/useStore";
+import { Select } from "../ui/Select";
 
 type Props = {
   scores: Record<string, number>;
@@ -37,38 +38,33 @@ export function CategoryChips({ scores, visible, isSelected, onToggle, onAdd, je
               onClick={() => onToggle(slug)}
               aria-pressed={selected}
               title={score !== undefined ? `Score ${Math.round(score * 100)}%` : "Added by you"}
-              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors ${
                 selected
-                  ? "border-transparent font-medium text-stone-900"
-                  : "border-dashed border-stone-300 text-stone-500 hover:border-stone-400 hover:text-stone-700"
+                  ? "border-transparent font-medium text-title"
+                  : "border-dashed border-faint/50 text-caption hover:border-accent hover:text-title"
               }`}
               style={selected ? { backgroundColor: `${c.color}26`, borderColor: `${c.color}80` } : undefined}
             >
               {selected ? <Check className="size-3" strokeWidth={3} /> : <Plus className="size-3" />}
-              <span className="size-1.5 rounded-full" style={{ backgroundColor: c.color }} aria-hidden />
+              <span className="cat-dot size-1.5 rounded-full" style={{ backgroundColor: c.color }} aria-hidden />
               {c.name}
-              {!selected && <span className="text-stone-400">· maybe</span>}
+              {!selected && <span className="text-faint">· maybe</span>}
             </button>
           );
         })}
 
-        <select
+        <Select
+          size="xs"
+          label="Add a category"
+          placeholder="+ Category"
           value=""
-          onChange={(e) => e.target.value && onAdd(e.target.value)}
-          aria-label="Add a category"
-          className="rounded-full border border-stone-200 bg-white px-2 py-1 text-xs text-stone-500"
-        >
-          <option value="">+ Category</option>
-          {addable.map((c) => (
-            <option key={c.slug} value={c.slug}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          onChange={onAdd}
+          options={addable.map((c) => ({ value: c.slug, label: c.name, color: c.color, indent: c.parent !== null }))}
+        />
       </div>
 
       <JevLine status={jevStatus} error={jevError} />
-      {!anySelected && emptyHint && <p className="text-xs text-stone-400">{emptyHint}</p>}
+      {!anySelected && emptyHint && <p className="text-xs text-faint">{emptyHint}</p>}
     </div>
   );
 }
@@ -76,21 +72,21 @@ export function CategoryChips({ scores, visible, isSelected, onToggle, onAdd, je
 function JevLine({ status, error }: { status: JevUiStatus; error?: string }) {
   if (status === "pending") {
     return (
-      <p className="flex items-center gap-1 text-xs text-stone-400">
+      <p className="flex items-center gap-1 text-xs text-faint">
         <Loader2 className="size-3 animate-spin" /> Asking JEV…
       </p>
     );
   }
   if (status === "ok") {
     return (
-      <p className="flex items-center gap-1 text-xs text-stone-400">
+      <p className="flex items-center gap-1 text-xs text-faint">
         <Sparkles className="size-3" /> Suggested by JEV
       </p>
     );
   }
   if (status === "error" || status === "timeout") {
     return (
-      <p className="text-xs text-amber-700" title={error}>
+      <p className="text-xs text-warn" title={error}>
         JEV {status === "timeout" ? "timed out" : "is unavailable"}; using keyword rules.
       </p>
     );

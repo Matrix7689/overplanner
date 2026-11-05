@@ -5,10 +5,11 @@ export function CategoryBadge({ category }: { category: CategoryDef }) {
   return (
     <Link
       to={`/category/${category.slug}`}
-      className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-stone-700 hover:bg-stone-50"
-      style={{ borderColor: `${category.color}55` }}
+      draggable={false}
+      onClick={(e) => e.stopPropagation()}
+      className="inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-xs font-medium text-body transition-colors hover:text-title"
     >
-      <span className="size-1.5 rounded-full" style={{ backgroundColor: category.color }} aria-hidden />
+      <span className="cat-dot size-1.5 rounded-full" style={{ backgroundColor: category.color }} aria-hidden />
       {category.name}
     </Link>
   );

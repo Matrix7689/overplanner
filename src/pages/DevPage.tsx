@@ -16,7 +16,7 @@ export function DevPage() {
             value={scratch}
             onChange={(e) => setScratch(e.target.value)}
             placeholder="Jot something down… (not saved yet)"
-            className="h-48 w-full resize-y rounded-lg border border-stone-200 p-3 font-mono text-sm outline-none focus:border-stone-400"
+            className="h-48 w-full resize-y rounded-lg border border-line bg-transparent p-3 font-mono text-title text-sm outline-none focus:border-accent"
           />
         </Panel>
         <Panel title="Sketches">
@@ -35,8 +35,8 @@ export function DevPage() {
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-xl border border-stone-200 bg-white p-4">
-      <h2 className="mb-3 text-sm font-medium text-stone-500">{title}</h2>
+    <section className="card-shadow rounded-2xl border border-line bg-surface p-4">
+      <h2 className="mb-3 text-sm font-semibold text-title">{title}</h2>
       {children}
     </section>
   );
@@ -44,7 +44,7 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
 
 function Placeholder({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-stone-200 text-sm text-stone-400">
+    <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-line text-sm text-faint">
       {children}
     </div>
   );

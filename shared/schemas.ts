@@ -6,6 +6,7 @@ import { z } from "zod";
 const slug = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Expected a lowercase-hyphenated slug");
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 const isoDateTime = z.iso.datetime();
+const HexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Expected a colour like #A88462");
 
 // ---- Categories ----
 
@@ -28,6 +29,22 @@ export const CategoryDefSchema = z.object({
 });
 
 export const CategoriesFileSchema = z.array(CategoryDefSchema);
+
+// PATCH /api/categories/:slug. The slug can't change: it names the category's
+// data file and every item refers to it.
+export const UpdateCategorySchema = z
+  .object({
+    name: z.string().trim().min(1, "A category needs a name").max(60),
+    description: z.string().trim().max(2000),
+    kind: z.enum(["category", "list"]),
+    parent: slug.nullable(),
+    color: HexColorSchema,
+    keywords: z.array(z.string().trim().min(1)),
+    showOnDashboard: z.boolean(),
+    suggest: z.boolean(),
+  })
+  .strict()
+  .partial();
 
 // ---- Items ----
 
@@ -200,8 +217,23 @@ export const ThemeSchema = z.enum(["system", "light", "dark"]);
 // UI preferences stored in settings.json. Unknown keys are kept.
 export const SidebarSectionSchema = z.enum(["categories", "lists"]);
 
+// A custom theme: six HEX colours, darkest to lightest plus a neutral.
+export const PaletteSchema = z.object({
+  darkest: HexColorSchema,
+  dark: HexColorSchema,
+  mid: HexColorSchema,
+  accent: HexColorSchema,
+  light: HexColorSchema,
+  neutral: HexColorSchema,
+});
+
+// Fonts bundled with the app (see src/lib/fonts.ts). "system" uses the device's.
+export const FontSchema = z.enum(["plus-jakarta-sans", "inter", "dm-sans", "nunito", "lora", "jetbrains-mono", "system"]);
+
 const UiSchema = z.looseObject({
   theme: ThemeSchema.default("system"),
+  font: FontSchema.default("plus-jakarta-sans"),
+  customPalette: PaletteSchema.nullable().default(null), // null: the built-in colours
   sidebarCollapsed: z.boolean().default(false), // icons only
   collapsedSections: z.array(SidebarSectionSchema).default([]), // folded sidebar sections
   // Dashboard card order as category slugs. Categories not listed (new ones)
@@ -230,6 +262,8 @@ export const SettingsFileSchema = SettingsBaseSchema.partial();
 // them), so `ui` here has plain optional keys instead of UiSchema.
 const UiPatchSchema = z.looseObject({
   theme: ThemeSchema.optional(),
+  font: FontSchema.optional(),
+  customPalette: PaletteSchema.nullable().optional(),
   sidebarCollapsed: z.boolean().optional(),
   collapsedSections: z.array(SidebarSectionSchema).optional(),
   dashboardOrder: z.array(z.string()).optional(),

@@ -1,8 +1,10 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { CategoriesFileSchema } from "../shared/schemas";
+import type { z } from "zod";
+import { CategoriesFileSchema, type UpdateCategorySchema } from "../shared/schemas";
 import type { CategoryDef } from "../shared/types";
-import { readJsonFile } from "./jsonFile";
+import { HttpError } from "./errors";
+import { readJsonFile, withWriteLock, writeJsonFile } from "./jsonFile";
 
 // The master list, data/categories.json. Per-category item files are owned
 // by ItemRepo, which creates one for every category listed here.
@@ -15,8 +17,12 @@ export class CategoryRepo {
     private readonly seedFile: string,
   ) {}
 
+  private get file(): string {
+    return path.join(this.dataDir, "categories.json");
+  }
+
   async load(): Promise<void> {
-    const file = path.join(this.dataDir, "categories.json");
+    const file = this.file;
     const list = await readJsonFile(file, CategoriesFileSchema, async () =>
       CategoriesFileSchema.parse(JSON.parse(await fs.readFile(this.seedFile, "utf8"))),
     );
@@ -32,8 +38,53 @@ export class CategoryRepo {
       }
     }
 
+    this.setList(list);
+  }
+
+  private setList(list: CategoryDef[]): void {
     this.list = [...list].sort((a, b) => a.order - b.order);
-    this.bySlug = bySlug;
+    this.bySlug = new Map(list.map((c) => [c.slug, c]));
+  }
+
+  private async save(list: CategoryDef[]): Promise<void> {
+    await writeJsonFile(this.file, CategoriesFileSchema, list);
+    this.setList(list);
+  }
+
+  // Subcategories go one level deep and always match their parent's kind.
+  update(slug: string, patch: z.output<typeof UpdateCategorySchema>): Promise<CategoryDef[]> {
+    return withWriteLock(async () => {
+      const current = this.bySlug.get(slug);
+      if (!current) throw new HttpError(404, "Category not found");
+      const next: CategoryDef = { ...current, ...patch };
+
+      const name = next.name.toLowerCase();
+      if (this.list.some((c) => c.slug !== slug && c.name.toLowerCase() === name)) {
+        throw new HttpError(400, `There is already a category called "${next.name}"`);
+      }
+
+      if (next.parent !== null) {
+        const parent = this.bySlug.get(next.parent);
+        if (!parent) throw new HttpError(400, `Unknown parent "${next.parent}"`);
+        if (parent.slug === slug) throw new HttpError(400, "A category can't be its own parent");
+        if (parent.parent !== null) throw new HttpError(400, `"${parent.name}" is a subcategory, so it can't have subcategories`);
+        if (this.children(slug).length > 0) throw new HttpError(400, `"${next.name}" has subcategories, so it has to stay top level`);
+        next.kind = parent.kind;
+      }
+
+      await this.save(this.list.map((c) => (c.slug === slug ? next : c.parent === slug ? { ...c, kind: next.kind } : c)));
+      return this.list;
+    });
+  }
+
+  // For ItemRepo.removeCategory, which holds the write lock and moves the
+  // category's items out first.
+  async removeWhileLocked(slug: string): Promise<void> {
+    await this.save(this.list.filter((c) => c.slug !== slug));
+  }
+
+  children(slug: string): CategoryDef[] {
+    return this.list.filter((c) => c.parent === slug);
   }
 
   all(): CategoryDef[] {

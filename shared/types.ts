@@ -9,17 +9,20 @@ import type {
   ClassifyRequestSchema,
   CreateItemUnion,
   FeedbackEntrySchema,
+  FontSchema,
   ItemKindSchema,
   ItemQuerySchema,
   ItemSchema,
   ItemSourceSchema,
   ItemStatusSchema,
   NoteSchema,
+  PaletteSchema,
   TaskSchema,
   SettingsPatchSchema,
   SettingsSchema,
   SidebarSectionSchema,
   ThemeSchema,
+  UpdateCategorySchema,
   UpdateItemSchema,
 } from "./schemas";
 
@@ -109,6 +112,9 @@ export type BackupStatus = BackupState & {
 };
 
 export type Theme = z.infer<typeof ThemeSchema>;
+export type Palette = z.infer<typeof PaletteSchema>;
+export type FontId = z.infer<typeof FontSchema>;
+export type UpdateCategoryInput = z.input<typeof UpdateCategorySchema>;
 export type SidebarSection = z.infer<typeof SidebarSectionSchema>;
 export type Settings = z.infer<typeof SettingsSchema>;
 export type SettingsPatch = z.input<typeof SettingsPatchSchema>;
@@ -118,7 +124,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maybeThreshold: 0.4,
   backupPath: "",
   backupKeep: 28, // one week of 6-hourly backups
-  ui: { theme: "system", sidebarCollapsed: false, collapsedSections: [], dashboardOrder: [] },
+  ui: { theme: "system", font: "plus-jakarta-sans", customPalette: null, sidebarCollapsed: false, collapsedSections: [], dashboardOrder: [] },
 };
 
 // Deleted items are purged this many days after deletedAt.

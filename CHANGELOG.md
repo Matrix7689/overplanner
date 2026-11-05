@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.12.0 - 2026-11-05
+
+- Full visual redesign in a warm coffee palette (`#1A120E`, `#3A2418`, `#6B4A2E`, `#A88462`, `#D5C4AE`, `#4A4A46`), light and dark, with Plus Jakarta Sans
+- New UI kit in `src/ui/`: Radix UI components styled with recipes ported from Tailus UI to Tailwind v4 (buttons, checkboxes, selects, sliders, tooltips, dialogs)
+- Dark brown sidebar in both themes, glass top bar, and tooltips in the icons-only sidebar
+- Dashboard: date and greeting header, tiles for open tasks, due today and Inbox, and a colour wash on each card's header (where background photos can go later)
+- The browser's `confirm()` popups are replaced by styled dialogs; the item editor is now a proper modal dialog with focus trapping
+- Capture app and icons recoloured to match; its cache version is bumped so installed phones pick up the new look
+- Theme colours checked against WCAG AA contrast in both themes: 4.5:1 for text colours, 3:1 for the accent colour used on icons and controls
+- Settings > Theme colors: set your own six HEX colours by typing or with a swatch, with live light and dark previews and a warning for hard-to-read combinations; saved in `settings.json` as `ui.customPalette`
+- Item editor: pin, mark as done (or archive), delete and close now each have their own coloured background
+- Settings > Font: choose from seven fonts, six bundled with the app so they work offline, plus the device's own; saved in `settings.json` as `ui.font`
+- Sidebar: Dev and the dark mode toggle removed. The theme is set in Settings > Appearance; the Dev page is still at `/dev` and in the top search
+- Settings page has its own section navigation: a column beside the sections on large screens, a row of chips on phones
+- Settings > Categories: edit any category (name, description, color, parent, Categories or Lists, keywords, Dashboard and suggestion toggles) or delete it, saved to `data/categories.json`. IDs stay fixed. Deleting never deletes items: they stay in their other categories or move to the Inbox. A category with subcategories can't be deleted until they're moved or deleted
+
 ## 0.11.0 - 2026-11-05
 
 - Phase 5: capture app at `/capture/`, installable on Android as a PWA: add tasks and notes to the Inbox, one-way, in about 15KB of code

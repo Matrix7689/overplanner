@@ -25,6 +25,9 @@ type Destination = { title: string; subtitle: string; keywords: string[]; to: st
 // Settings sections link to their anchors on the Settings page.
 const SETTINGS: Destination[] = [
   { title: "Appearance", subtitle: "Theme: system, light or dark", keywords: ["dark mode", "light mode", "theme"], to: "/settings#appearance" },
+  { title: "Font", subtitle: "Change the app's font", keywords: ["typeface", "text", "serif", "monospace"], to: "/settings#font" },
+  { title: "Categories", subtitle: "Edit or delete categories", keywords: ["rename", "category color", "keywords", "lists", "subcategory"], to: "/settings#categories" },
+  { title: "Theme colors", subtitle: "Your own HEX colors, with previews", keywords: ["palette", "hex", "color", "colour", "custom theme", "preview"], to: "/settings#theme-colors" },
   { title: "Classification thresholds", subtitle: "When suggestion chips are pre-selected or shown as Maybe", keywords: ["chips", "threshold", "maybe", "auto-select", "suggestions"], to: "/settings#classification-thresholds" },
   { title: "Backup", subtitle: "Google Drive folder, backups to keep, back up now", keywords: ["drive", "google drive", "restore", "force backup", "snapshot"], to: "/settings#backup" },
   { title: "JEV", subtitle: "Classifier connection, last call, test", keywords: ["typesafe", "api key", "classifier", "ai"], to: "/settings#jev" },
@@ -209,7 +212,7 @@ export function TopSearch() {
           e.preventDefault();
           void search();
         }}
-        className="flex items-center rounded-lg border border-stone-200 bg-stone-50 focus-within:border-stone-400 focus-within:bg-white"
+        className="card-shadow flex items-center card-shadow rounded-2xl border border-line bg-surface transition-colors focus-within:border-accent"
       >
         <input
           ref={inputRef}
@@ -226,7 +229,7 @@ export function TopSearch() {
           aria-label="Search everything"
           aria-expanded={open}
           aria-controls="top-search-results"
-          className="min-w-0 flex-1 bg-transparent py-1.5 pl-3 text-sm outline-none placeholder:text-stone-400"
+          className="min-w-0 flex-1 bg-transparent py-2 pl-3.5 text-sm text-title outline-none placeholder:text-faint"
         />
         {text && (
           <button
@@ -237,16 +240,16 @@ export function TopSearch() {
               inputRef.current?.focus();
             }}
             aria-label="Clear search"
-            className="rounded p-1 text-stone-400 hover:text-stone-700"
+            className="rounded p-1 text-faint hover:text-body"
           >
             <X className="size-4" />
           </button>
         )}
-        <kbd className="mr-1 hidden rounded border border-stone-200 px-1.5 text-[10px] text-stone-400 lg:inline">Ctrl K</kbd>
+        <kbd className="mr-2 hidden rounded-md bg-soft px-1.5 py-0.5 font-sans text-[10px] font-medium text-caption lg:inline">Ctrl K</kbd>
         <button
           type="submit"
           aria-label="Search"
-          className="flex items-center gap-1 rounded-r-lg border-l border-stone-200 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100"
+          className="m-1 flex items-center rounded-lg bg-linear-to-b from-(--action-from) to-(--action-to) p-1.5 text-on-action transition-[filter] hover:brightness-110"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
         </button>
@@ -256,12 +259,12 @@ export function TopSearch() {
         <div
           id="top-search-results"
           role="listbox"
-          className="absolute inset-x-0 top-full z-40 mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-stone-200 bg-white py-2 shadow-xl"
+          className="pop-shadow animate-pop absolute inset-x-0 top-full z-40 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-surface py-2"
         >
-          {loading && results.length === 0 && <p className="px-4 py-3 text-sm text-stone-400">Searching…</p>}
-          {error && <p className="px-4 py-2 text-sm text-red-600">Couldn't search tasks and notes: {error}</p>}
+          {loading && results.length === 0 && <p className="px-4 py-3 text-sm text-faint">Searching…</p>}
+          {error && <p className="px-4 py-2 text-sm text-danger">Couldn't search tasks and notes: {error}</p>}
           {!loading && results.length === 0 && !error && (
-            <p className="px-4 py-3 text-sm text-stone-400">Nothing matches “{query}”.</p>
+            <p className="px-4 py-3 text-sm text-faint">Nothing matches “{query}”.</p>
           )}
 
           {results.map((r, i) => {
@@ -270,7 +273,7 @@ export function TopSearch() {
             return (
               <div key={r.key}>
                 {header && (
-                  <p className="px-4 pt-3 pb-1 text-[11px] font-medium tracking-wide text-stone-400 uppercase first:pt-1">
+                  <p className="px-4 pt-3 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase first:pt-1">
                     {r.group}
                   </p>
                 )}
@@ -281,21 +284,21 @@ export function TopSearch() {
                   data-index={i}
                   onMouseEnter={() => setActive(i)}
                   onClick={r.run}
-                  className={`flex w-full items-start gap-3 px-4 py-2 text-left ${i === active ? "bg-stone-100" : ""}`}
+                  className={`flex w-full items-start gap-3 px-4 py-2 text-left ${i === active ? "bg-soft" : ""}`}
                 >
                   {r.group === "Notes" ? (
-                    <StickyNote className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
+                    <StickyNote className="mt-0.5 size-3.5 shrink-0 text-accent" />
                   ) : (
                     <span
-                      className="mt-1.5 size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: r.color ?? "var(--color-stone-300)" }}
+                      className="cat-dot mt-1.5 size-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: r.color ?? "var(--faint-text-color)" }}
                     />
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className={`block truncate text-sm ${r.dim ? "text-stone-400 line-through" : "text-stone-800"}`}>
+                    <span className={`block truncate text-sm ${r.dim ? "text-faint line-through" : "text-title"}`}>
                       {r.title}
                     </span>
-                    {r.subtitle && <span className="block truncate text-xs text-stone-500">{r.subtitle}</span>}
+                    {r.subtitle && <span className="block truncate text-xs text-caption">{r.subtitle}</span>}
                   </span>
                 </button>
               </div>
@@ -309,7 +312,7 @@ export function TopSearch() {
                 navigate(`/search?${new URLSearchParams({ q: query! })}`);
                 close();
               }}
-              className="mt-1 w-full border-t border-stone-100 px-4 pt-2 text-left text-xs text-stone-500 hover:text-stone-800"
+              className="mt-1 w-full border-t border-line px-4 pt-2 text-left text-xs text-caption hover:text-title"
             >
               See all {taskCount + noteCount} tasks and notes in Advanced search
             </button>

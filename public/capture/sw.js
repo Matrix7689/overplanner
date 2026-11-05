@@ -4,7 +4,7 @@
 
 importScripts("./queue.js");
 
-const CACHE = "capture-v1";
+const CACHE = "capture-v3";
 const SHELL = ["./", "./app.js", "./queue.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (event) => {

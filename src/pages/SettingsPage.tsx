@@ -1,12 +1,19 @@
-import { Loader2 } from "lucide-react";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import type { ClassifyResult, Theme } from "../../shared/types";
-import { useLocation } from "react-router";
+import { CloudUpload, Loader2, Palette, Pencil, Plug, Sparkles, SlidersHorizontal, SunMoon, Tags, Trash2, Type, type LucideIcon } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import type { CategoryDef, ClassifyResult, Theme } from "../../shared/types";
+import { useLocation, useNavigate } from "react-router";
+import { CategoryEditor } from "../components/CategoryEditor";
 import { PageHeader } from "../components/PageHeader";
+import { PaletteEditor } from "../components/PaletteEditor";
 import { api } from "../lib/api";
 import { backupFailed } from "../lib/backup";
 import { formatDateTime } from "../lib/dates";
+import { FONTS } from "../lib/fonts";
 import { useStore } from "../store/useStore";
+import { Button } from "../ui/Button";
+import { confirmDialog } from "../ui/Confirm";
+import { Segmented } from "../ui/Segmented";
+import { Slider } from "../ui/Slider";
 
 const THEMES: { value: Theme; label: string }[] = [
   { value: "system", label: "System" },
@@ -14,9 +21,23 @@ const THEMES: { value: Theme; label: string }[] = [
   { value: "dark", label: "Dark" },
 ];
 
+// The sections, in page order, for the navigation beside them. Each title's
+// slug is its section's anchor; `label` shortens a long title in the nav.
+const SECTIONS: { title: string; label?: string; icon: LucideIcon }[] = [
+  { title: "Appearance", icon: SunMoon },
+  { title: "Font", icon: Type },
+  { title: "Theme colors", icon: Palette },
+  { title: "Classification thresholds", label: "Classification", icon: SlidersHorizontal },
+  { title: "Backup", icon: CloudUpload },
+  { title: "JEV", icon: Sparkles },
+  { title: "Integrations", icon: Plug },
+  { title: "Categories", icon: Tags },
+];
+
+const sectionId = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
 export function SettingsPage() {
   const settings = useStore((s) => s.settings);
-  const categories = useStore((s) => s.categories);
   const updateSettings = useStore((s) => s.updateSettings);
   const setTheme = useStore((s) => s.setTheme);
   const { hash } = useLocation();
@@ -30,43 +51,43 @@ export function SettingsPage() {
     <>
       <PageHeader title="Settings" />
 
+      <div className="lg:grid lg:grid-cols-[11rem_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <SettingsNav />
       <div className="space-y-6">
         <Section title="Appearance" description="Saved in settings.json, so it follows you across devices.">
-          <div className="inline-flex rounded-lg border border-stone-200 p-0.5 text-sm" role="radiogroup" aria-label="Theme">
-            {THEMES.map(({ value, label }) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={settings.ui.theme === value}
-                onClick={() => setTheme(value)}
-                className={`rounded-md px-3 py-1 ${
-                  settings.ui.theme === value ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          <div>
+            <Segmented label="Theme" value={settings.ui.theme} onChange={setTheme} options={THEMES} />
           </div>
           {settings.ui.theme === "system" && (
-            <p className="text-xs text-stone-400">Follows your device's light or dark setting.</p>
+            <p className="text-xs text-faint">Follows your device's light or dark setting.</p>
           )}
         </Section>
 
+        <Section title="Font" description="Bundled with the app, so it works offline. Applies straight away.">
+          <FontPicker />
+        </Section>
+
+        <Section
+          title="Theme colors"
+          description="Type HEX codes or click a swatch. The previews update as you go, and Apply changes the whole app. The phone capture app keeps the default colors."
+        >
+          <PaletteEditor />
+        </Section>
+
         <Section title="Classification thresholds" description="How confident a category score must be to show as a chip.">
-          <Slider
+          <ThresholdSlider
             label="Auto-select at or above"
             value={settings.autoSelectThreshold}
             min={settings.maybeThreshold}
             onChange={(v) => updateSettings({ autoSelectThreshold: v })}
           />
-          <Slider
+          <ThresholdSlider
             label="Show as “Maybe” at or above"
             value={settings.maybeThreshold}
             max={settings.autoSelectThreshold}
             onChange={(v) => updateSettings({ maybeThreshold: v })}
           />
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-faint">
             Scores below {settings.maybeThreshold.toFixed(2)} are hidden. If no chip reaches it, the item goes to Inbox.
           </p>
         </Section>
@@ -76,51 +97,193 @@ export function SettingsPage() {
         <JevSection />
 
         <Section title="Integrations">
-          <Status label="Web Share Target" value="Not set up" />
+          <Status label="Phone capture and share menu" value="Install from /capture/ on your phone" />
           <Status label="Google Keep import" value="Not set up" />
           <Status label="WhatsApp import" value="Not set up" />
         </Section>
 
-        <Section title="Categories" description="From data/categories.json.">
-          <div className="-mx-4 overflow-x-auto">
-            <table className="w-full min-w-[48rem] text-left text-sm">
-              <thead className="text-xs text-stone-400">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Name</th>
-                  <th className="px-4 py-2 font-medium">Slug</th>
-                  <th className="px-4 py-2 font-medium">Kind</th>
-                  <th className="px-4 py-2 font-medium">Description</th>
-                  <th className="px-4 py-2 font-medium">Keywords</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {categories
-                  .filter((c) => c.parent === null)
-                  .flatMap((top) => [top, ...categories.filter((c) => c.parent === top.slug)])
-                  .map((c) => (
-                  <tr key={c.slug}>
-                    <td className={`px-4 py-2 whitespace-nowrap ${c.parent ? "pl-10" : ""}`}>
-                      <span className="mr-2 inline-block size-2 rounded-full" style={{ backgroundColor: c.color }} />
-                      {c.name}
-                      {!c.showOnDashboard && (
-                        <span className="ml-2 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">Not on Dashboard</span>
-                      )}
-                      {!c.suggest && (
-                        <span className="ml-1 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500">Manual only</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 font-mono text-xs text-stone-500">{c.slug}</td>
-                    <td className="px-4 py-2 text-stone-500">{c.parent ? "subcategory" : c.kind}</td>
-                    <td className="px-4 py-2 text-stone-500">{c.description}</td>
-                    <td className="px-4 py-2 text-xs text-stone-400">{c.keywords.join(", ") || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Section>
+        <CategoriesSection />
+      </div>
       </div>
     </>
+  );
+}
+
+// Follows the scroll position and jumps to a section when clicked. A row of
+// chips on small screens, a column beside the sections on large ones.
+function SettingsNav() {
+  const navigate = useNavigate();
+  const [active, setActive] = useState(sectionId(SECTIONS[0].title));
+  const ignoreScrollUntil = useRef(0);
+
+  // The current section is the last one whose top has passed a line just below
+  // the top of the scrolling area.
+  useEffect(() => {
+    const main = document.querySelector("main");
+    if (!main) return;
+    const update = () => {
+      if (Date.now() < ignoreScrollUntil.current) return;
+      const line = main.getBoundingClientRect().top + 120;
+      let current = sectionId(SECTIONS[0].title);
+      for (const { title } of SECTIONS) {
+        const id = sectionId(title);
+        const top = document.getElementById(id)?.getBoundingClientRect().top;
+        if (top !== undefined && top <= line) current = id;
+      }
+      setActive(current);
+    };
+    update();
+    main.addEventListener("scroll", update, { passive: true });
+    return () => main.removeEventListener("scroll", update);
+  }, []);
+
+  // Keep the current chip in view in the sideways-scrolling phone row.
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const chip = navRef.current?.querySelector<HTMLElement>('[aria-current="true"]');
+    const nav = navRef.current;
+    if (chip && nav && nav.scrollWidth > nav.clientWidth) nav.scrollTo({ left: chip.offsetLeft - 16, behavior: "smooth" });
+  }, [active]);
+
+  const go = (id: string) => {
+    // Don't let sections passing by during the smooth scroll flicker the nav.
+    ignoreScrollUntil.current = Date.now() + 900;
+    setActive(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    void navigate({ hash: id }, { replace: true });
+  };
+
+  return (
+    <nav
+      ref={navRef}
+      aria-label="Settings sections"
+      className="sticky top-0 z-10 -mx-4 mb-4 flex gap-1 overflow-x-auto bg-page/90 px-4 py-2 backdrop-blur-md md:-mx-8 md:px-8 lg:top-6 lg:mx-0 lg:mb-0 lg:flex-col lg:overflow-visible lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
+    >
+      {SECTIONS.map(({ title, label, icon: Icon }) => {
+        const id = sectionId(title);
+        return (
+          <button
+            key={id}
+            type="button"
+            aria-current={active === id ? "true" : undefined}
+            onClick={() => go(id)}
+            className="flex shrink-0 items-center gap-2 rounded-xl px-3 py-1.5 text-left text-sm whitespace-nowrap text-caption transition-colors hover:bg-soft hover:text-title focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent aria-[current=true]:bg-surface aria-[current=true]:font-medium aria-[current=true]:text-title aria-[current=true]:shadow-(--card-shadow)"
+          >
+            <Icon className="size-4 shrink-0" />
+            {label ?? title}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+function FontPicker() {
+  const font = useStore((s) => s.settings.ui.font);
+  const updateSettings = useStore((s) => s.updateSettings);
+
+  return (
+    <div role="radiogroup" aria-label="Font" className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      {FONTS.map((f) => (
+        <button
+          key={f.id}
+          type="button"
+          role="radio"
+          aria-checked={font === f.id}
+          aria-label={f.label}
+          onClick={() => updateSettings({ ui: { font: f.id } })}
+          style={{ fontFamily: f.stack }}
+          className={`rounded-xl border p-3 text-left transition-colors hover:bg-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+            font === f.id ? "border-accent bg-soft" : "border-line"
+          }`}
+        >
+          <span className="block text-sm font-semibold text-title">{f.label}</span>
+          <span className="mt-0.5 block text-xs text-caption">Order new beans by Friday, 12:30</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CategoriesSection() {
+  const categories = useStore((s) => s.categories);
+  const items = useStore((s) => s.items);
+  const deleteCategory = useStore((s) => s.deleteCategory);
+  const [editing, setEditing] = useState<string | null>(null);
+  const editingCategory = categories.find((c) => c.slug === editing);
+
+  const remove = async (c: CategoryDef) => {
+    const inCategory = items.filter((it) => it.categories.includes(c.slug));
+    const toInbox = inCategory.filter((it) => it.categories.length === 1).length;
+    const others = inCategory.length - toInbox;
+    const plural = (n: number) => `${n} item${n === 1 ? "" : "s"}`;
+    const fate = [
+      toInbox > 0 ? `${plural(toInbox)} will move to the Inbox` : "",
+      others > 0 ? `${plural(others)} will stay in ${others === 1 ? "its" : "their"} other categories` : "",
+    ].filter(Boolean);
+    const ok = await confirmDialog({
+      title: `Delete "${c.name}"?`,
+      description:
+        inCategory.length === 0
+          ? "It has no items. This removes it from categories.json."
+          : `No items are deleted: ${fate.join(" and ")}. This removes the category from categories.json.`,
+      confirmLabel: "Delete category",
+      danger: true,
+    });
+    if (ok) await deleteCategory(c.slug);
+  };
+
+  return (
+    <Section title="Categories" description="Saved in data/categories.json. Deleting a category never deletes its items.">
+      <ul className="divide-y divide-line">
+        {categories
+          .filter((c) => c.parent === null)
+          .flatMap((top) => [top, ...categories.filter((c) => c.parent === top.slug)])
+          .map((c) => {
+            const hasChildren = categories.some((other) => other.parent === c.slug);
+            return (
+              <li key={c.slug} className={`flex items-start gap-3 py-3 first:pt-0 last:pb-0 ${c.parent ? "pl-5 sm:pl-7" : ""}`}>
+                <span className="cat-dot mt-1.5 size-2.5 shrink-0 rounded-full" style={{ backgroundColor: c.color }} aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="text-sm font-medium text-title">{c.name}</span>
+                    <span className="font-mono text-[11px] text-faint">{c.slug}</span>
+                    {(c.parent || c.kind === "list") && (
+                      <span className="rounded bg-soft px-1.5 py-0.5 text-[10px] text-caption">{c.parent ? "Subcategory" : "List"}</span>
+                    )}
+                    {!c.showOnDashboard && <span className="rounded bg-soft px-1.5 py-0.5 text-[10px] text-caption">Not on Dashboard</span>}
+                    {!c.suggest && <span className="rounded bg-soft px-1.5 py-0.5 text-[10px] text-caption">Manual only</span>}
+                  </p>
+                  {c.description && <p className="mt-0.5 line-clamp-2 text-xs text-caption">{c.description}</p>}
+                  {c.keywords.length > 0 && <p className="mt-0.5 truncate text-xs text-faint">{c.keywords.join(", ")}</p>}
+                </div>
+                <div className="flex shrink-0 gap-1.5">
+                  <button
+                    type="button"
+                    aria-label={`Edit ${c.name}`}
+                    title="Edit"
+                    onClick={() => setEditing(c.slug)}
+                    className="rounded-lg bg-soft p-2 text-body transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent dark:hover:brightness-125"
+                  >
+                    <Pencil className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Delete ${c.name}`}
+                    title={hasChildren ? "Delete or move its subcategories first" : "Delete"}
+                    disabled={hasChildren}
+                    onClick={() => void remove(c)}
+                    className="rounded-lg bg-danger-soft p-2 text-danger transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-45 dark:hover:brightness-125"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+      </ul>
+      {editingCategory && <CategoryEditor category={editingCategory} onClose={() => setEditing(null)} />}
+    </Section>
   );
 }
 
@@ -141,16 +304,16 @@ function BackupSection() {
       description="Every 6 hours, data/ is copied into a new dated folder here. Use a Google Drive for desktop folder so it reaches the cloud."
     >
       <label className="block text-sm">
-        <span className="text-stone-600">Backup folder</span>
+        <span className="text-body">Backup folder</span>
         <input
           value={settings.backupPath}
           onChange={(e) => updateSettings({ backupPath: e.target.value })}
           placeholder="G:\My Drive\Overplanner backups"
-          className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 font-mono text-sm outline-none focus:border-stone-400"
+          className="mt-1 w-full rounded-lg border border-line bg-transparent px-3 py-2 font-mono text-sm text-title outline-none focus:border-accent"
         />
       </label>
       <label className="flex items-center gap-3 text-sm">
-        <span className="text-stone-600">Backups to keep</span>
+        <span className="text-body">Backups to keep</span>
         <input
           type="number"
           min={1}
@@ -160,20 +323,20 @@ function BackupSection() {
             const n = Math.round(Number(e.target.value));
             if (n >= 1 && n <= 1000) updateSettings({ backupKeep: n });
           }}
-          className="w-20 rounded-lg border border-stone-200 px-2 py-1 text-sm outline-none focus:border-stone-400"
+          className="w-20 rounded-lg border border-line bg-transparent px-2 py-1 text-sm text-title outline-none focus:border-accent"
         />
-        <span className="text-xs text-stone-400">Older overplanner-… folders are deleted. Nothing else in the folder is touched.</span>
+        <span className="text-xs text-faint">Older overplanner-… folders are deleted. Nothing else in the folder is touched.</span>
       </label>
 
       {backup && (
-        <div className="space-y-3 border-t border-stone-100 pt-3">
+        <div className="space-y-3 border-t border-line pt-3">
           <Status
             label="Last backup"
             value={backup.lastSuccessAt ? formatDateTime(backup.lastSuccessAt) : "None yet"}
           />
           {backup.lastSuccessFolder && <Status label="Saved to" value={backup.lastSuccessFolder} />}
           {backupFailed(backup) && (
-            <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <p className="rounded-lg bg-warn-soft px-3 py-2 text-xs text-warn">
               Last attempt failed at {formatDateTime(backup.lastAttemptAt!)}: {backup.lastError}
             </p>
           )}
@@ -181,15 +344,10 @@ function BackupSection() {
             label="Next scheduled"
             value={backup.configured && backup.nextRunAt ? formatDateTime(backup.nextRunAt) : "Off until a folder is set"}
           />
-          <button
-            type="button"
-            onClick={() => void forceBackup()}
-            disabled={!backup.configured || backup.running}
-            className="inline-flex items-center gap-1 rounded-lg border border-stone-200 px-3 py-1.5 text-sm hover:bg-stone-50 disabled:opacity-40"
-          >
+          <Button variant="outlined" size="sm" onClick={() => void forceBackup()} disabled={!backup.configured || backup.running}>
             {backup.running && <Loader2 className="size-3.5 animate-spin" />}
             Back up now
-          </button>
+          </Button>
         </div>
       )}
     </Section>
@@ -252,30 +410,26 @@ function JevSection() {
       <Status label="Corrections logged" value={String(classifier?.feedbackCount ?? 0)} />
 
       {jev?.configured && (
-        <form onSubmit={test} className="space-y-3 border-t border-stone-100 pt-3">
+        <form onSubmit={test} className="space-y-3 border-t border-line pt-3">
           <div className="flex gap-2">
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="min-w-0 flex-1 rounded-lg border border-stone-200 px-3 py-1.5 text-sm outline-none focus:border-stone-400"
+              className="min-w-0 flex-1 rounded-lg border border-line bg-transparent px-3 py-1.5 text-sm text-title outline-none focus:border-accent"
               aria-label="Test text"
             />
-            <button
-              type="submit"
-              disabled={testing || !text.trim()}
-              className="inline-flex items-center gap-1 rounded-lg border border-stone-200 px-3 py-1.5 text-sm hover:bg-stone-50 disabled:opacity-40"
-            >
+            <Button type="submit" variant="outlined" size="sm" disabled={testing || !text.trim()}>
               {testing && <Loader2 className="size-3.5 animate-spin" />}
               Test
-            </button>
+            </Button>
           </div>
-          {testError && <p className="text-xs text-red-600">{testError}</p>}
+          {testError && <p className="text-xs text-danger">{testError}</p>}
           {result && (
             <div className="space-y-1.5">
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-caption">
                 {result.jev.status === "ok" ? "JEV scores (merged with keyword rules):" : `JEV ${result.jev.status}: ${result.jev.error ?? ""}. Keyword scores:`}
               </p>
-              {top.length === 0 && <p className="text-xs text-stone-400">No category scored above zero.</p>}
+              {top.length === 0 && <p className="text-xs text-faint">No category scored above zero.</p>}
               {top.map(([slug, score]) => {
                 const c = categories.find((x) => x.slug === slug);
                 return (
@@ -283,10 +437,10 @@ function JevSection() {
                     <span className="w-36 shrink-0 truncate">
                       {c?.name ?? slug}
                     </span>
-                    <div className="h-1.5 flex-1 rounded-full bg-stone-100">
+                    <div className="h-1.5 flex-1 rounded-full bg-soft">
                       <div className="h-1.5 rounded-full" style={{ width: `${score * 100}%`, backgroundColor: c?.color ?? "#78716c" }} />
                     </div>
-                    <span className="w-10 text-right font-mono tabular-nums text-stone-500">{score.toFixed(2)}</span>
+                    <span className="w-10 text-right font-mono tabular-nums text-caption">{score.toFixed(2)}</span>
                   </div>
                 );
               })}
@@ -301,17 +455,20 @@ function JevSection() {
 // Each section is addressable as /settings#<slug of its title>, which the top
 // search links to (e.g. "Classification thresholds" -> #classification-thresholds).
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
-  const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const id = sectionId(title);
   return (
-    <section id={id} className="scroll-mt-4 rounded-xl border border-stone-200 bg-white p-4 target:ring-2 target:ring-stone-400">
-      <h2 className="text-sm font-medium">{title}</h2>
-      {description && <p className="mt-0.5 text-xs text-stone-500">{description}</p>}
+    <section
+      id={id}
+      className="card-shadow scroll-mt-16 rounded-2xl border border-line bg-surface p-5 target:ring-2 target:ring-accent lg:scroll-mt-6"
+    >
+      <h2 className="text-base font-semibold text-title">{title}</h2>
+      {description && <p className="mt-0.5 text-xs text-caption">{description}</p>}
       <div className="mt-4 space-y-3">{children}</div>
     </section>
   );
 }
 
-function Slider({
+function ThresholdSlider({
   label,
   value,
   min = 0,
@@ -325,27 +482,19 @@ function Slider({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="flex items-center gap-4 text-sm">
-      <span className="w-48 shrink-0 text-stone-600">{label}</span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={0.05}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 accent-stone-900"
-      />
-      <span className="w-10 text-right font-mono tabular-nums">{value.toFixed(2)}</span>
-    </label>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+      <span className="w-full text-body sm:w-48 sm:shrink-0">{label}</span>
+      <Slider label={label} value={value} min={min} max={max} step={0.05} onChange={onChange} />
+      <span className="w-10 text-right font-semibold text-title tabular-nums">{value.toFixed(2)}</span>
+    </div>
   );
 }
 
 function Status({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-stone-600">{label}</span>
-      <span className="text-stone-400">{value}</span>
+    <div className="flex items-baseline justify-between gap-4 text-sm">
+      <span className="shrink-0 text-body">{label}</span>
+      <span className="min-w-0 text-right break-words text-caption">{value}</span>
     </div>
   );
 }

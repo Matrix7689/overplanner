@@ -1,16 +1,13 @@
 import {
   CalendarDays,
   ChevronDown,
-  Code2,
   Inbox,
   LayoutDashboard,
   LayoutGrid,
   ListChecks,
-  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
-  Sun,
   TrendingUp,
   X,
   type LucideIcon,
@@ -18,8 +15,8 @@ import {
 import { useMemo, type ReactNode } from "react";
 import { NavLink } from "react-router";
 import type { CategoryDef, SidebarSection } from "../../shared/types";
-import { resolveTheme } from "../lib/theme";
 import { inboxItems, openCountBySlug, useStore } from "../store/useStore";
+import { Tooltip } from "../ui/Tooltip";
 
 type Props = {
   open: boolean;
@@ -47,35 +44,38 @@ export function Sidebar({ open, onClose }: Props) {
     <>
       {/* Backdrop for the mobile drawer */}
       <div
-        className={`fixed inset-0 z-30 bg-black/40 transition-opacity md:hidden ${
+        className={`fixed inset-0 z-30 bg-(--overlay-bg) backdrop-blur-sm transition-opacity md:hidden ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={onClose}
         aria-hidden
       />
 
+      {/* The sidebar stays dark brown in both light and dark mode. */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-stone-200 bg-white transition-transform md:static md:translate-x-0 ${
-          compact ? "md:w-14" : "md:w-64"
+        className={`surface-dark fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-linear-to-b from-brand-900 to-brand-950 shadow-[1px_0_0_0_var(--hairline)] transition-transform md:static md:translate-x-0 ${
+          compact ? "md:w-16" : "md:w-64"
         } ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className={`flex items-center justify-between px-5 pt-5 pb-3 ${compact ? "md:justify-center md:px-0" : ""}`}>
-          <NavLink to="/" className={`text-lg font-semibold tracking-tight ${compact ? "md:hidden" : ""}`}>
-            Overplanner
+        <div className={`flex items-center justify-between px-4 pt-5 pb-4 ${compact ? "md:justify-center md:px-0" : ""}`}>
+          <NavLink to="/" draggable={false} className={`flex items-center gap-2.5 ${compact ? "md:hidden" : ""}`}>
+            <img src="/favicon.svg" alt="" className="size-7 rounded-lg" />
+            <span className="text-base font-semibold tracking-tight text-title">Overplanner</span>
           </NavLink>
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            className="hidden rounded-md p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-800 md:block"
-            aria-label={compact ? "Expand sidebar" : "Collapse sidebar"}
-            title={compact ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {compact ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
-          </button>
+          <Tooltip label={compact ? "Expand sidebar" : "Collapse sidebar"} side={compact ? "right" : "bottom"}>
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="hidden rounded-lg p-1.5 text-caption transition-colors hover:bg-white/10 hover:text-title md:block"
+              aria-label={compact ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {compact ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+            </button>
+          </Tooltip>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-stone-500 hover:bg-stone-100 md:hidden"
+            className="rounded-lg p-1.5 text-caption hover:bg-white/10 md:hidden"
             aria-label="Close navigation"
           >
             <X className="size-5" />
@@ -116,13 +116,9 @@ export function Sidebar({ open, onClose }: Props) {
           </Section>
         </nav>
 
-        <div className={`border-t border-stone-200 px-3 py-3 ${compact ? "md:px-2" : ""}`}>
+        <div className={`border-t border-white/10 px-3 py-3 ${compact ? "md:px-2" : ""}`}>
           <ul className="space-y-0.5">
-            <MainLink to="/dev" icon={Code2} label="Dev" compact={compact} />
             <MainLink to="/settings" icon={Settings} label="Settings" compact={compact} />
-            <li>
-              <ThemeToggle compact={compact} />
-            </li>
           </ul>
         </div>
       </aside>
@@ -151,58 +147,36 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className={compact ? "md:mt-3 md:border-t md:border-stone-200 md:pt-3" : ""}>
+    <section className={compact ? "md:mt-3 md:border-t md:border-white/10 md:pt-3" : ""}>
       <h2 className={`mt-6 mb-1 ${compact ? "md:mt-0" : ""}`}>
-        <button
-          type="button"
-          onClick={() => onToggle(id)}
-          aria-expanded={!folded}
-          title={compact ? `${folded ? "Show" : "Hide"} ${title.toLowerCase()}` : undefined}
-          aria-label={title}
-          className={`flex w-full items-center gap-3 rounded-md px-3 py-0.5 text-xs font-medium tracking-wide uppercase hover:text-stone-700 ${
-            compact ? "md:justify-center md:px-0 md:py-1.5" : ""
-          } ${folded && compact ? "text-stone-300" : "text-stone-400"}`}
-        >
-          <Icon className="size-4 shrink-0" />
-          <span className={`flex-1 text-left ${compact ? "md:hidden" : ""}`}>{title}</span>
-          <ChevronDown className={`size-3.5 transition-transform ${folded ? "-rotate-90" : ""} ${compact ? "md:hidden" : ""}`} />
-        </button>
+        <Tooltip label={`${folded ? "Show" : "Hide"} ${title.toLowerCase()}`} enabled={compact}>
+          <button
+            type="button"
+            onClick={() => onToggle(id)}
+            aria-expanded={!folded}
+            aria-label={title}
+            className={`flex w-full items-center gap-3 rounded-lg px-3 py-1 text-[11px] font-semibold tracking-wider uppercase transition-colors hover:text-title ${
+              compact ? "md:justify-center md:px-0 md:py-1.5" : ""
+            } ${folded && compact ? "opacity-50" : ""} text-faint`}
+          >
+            <Icon className="size-4 shrink-0" />
+            <span className={`flex-1 text-left ${compact ? "md:hidden" : ""}`}>{title}</span>
+            <ChevronDown className={`size-3.5 transition-transform ${folded ? "-rotate-90" : ""} ${compact ? "md:hidden" : ""}`} />
+          </button>
+        </Tooltip>
       </h2>
       <ul className={`space-y-0.5 ${folded ? "hidden" : ""}`}>{children}</ul>
     </section>
   );
 }
 
-// Flips between light and dark; the "System" choice lives in Settings.
-function ThemeToggle({ compact }: { compact: boolean }) {
-  const theme = useStore((s) => s.settings.ui.theme);
-  const setTheme = useStore((s) => s.setTheme);
-  const isDark = resolveTheme(theme) === "dark";
-  const Icon = isDark ? Sun : Moon;
-  const label = isDark ? "Light mode" : "Dark mode";
-
-  return (
-    <button
-      type="button"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      title={compact ? label : undefined}
-      aria-label={label}
-      className={`flex w-full items-center gap-3 rounded-md px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 ${
-        compact ? "md:justify-center md:px-0" : ""
-      }`}
-    >
-      <Icon className="size-4 shrink-0" />
-      <span className={compact ? "md:hidden" : ""}>{label}</span>
-    </button>
-  );
-}
-
-const linkClass =
-  (compact: boolean) =>
-  ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 rounded-md px-3 py-1.5 text-sm ${compact ? "md:justify-center md:px-0" : ""} ${
-      isActive ? "bg-stone-100 font-medium text-stone-900" : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
-    }`;
+// A plain string, not NavLink's className function: the Tooltip's trigger merges
+// classes as text, which would turn a function into nonsense. NavLink marks the
+// current page with aria-current, so the active look keys off that instead.
+const linkClass = (compact: boolean) =>
+  `flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-body transition-colors hover:bg-white/8 hover:text-title aria-[current=page]:bg-brand-700/80 aria-[current=page]:font-medium aria-[current=page]:text-title aria-[current=page]:shadow-[inset_0_1px_0_0_var(--hairline)] ${
+    compact ? "md:justify-center md:px-0" : ""
+  }`;
 
 function MainLink({
   to,
@@ -221,43 +195,46 @@ function MainLink({
 }) {
   return (
     <li>
-      <NavLink to={to} end={end} className={linkClass(compact)} title={compact ? label : undefined} aria-label={label}>
-        <Icon className="size-4 shrink-0" />
-        <span className={`flex-1 ${compact ? "md:hidden" : ""}`}>{label}</span>
-        {count ? <Count value={count} compact={compact} /> : null}
-      </NavLink>
+      <Tooltip label={label} enabled={compact}>
+        <NavLink to={to} end={end} draggable={false} className={linkClass(compact)} aria-label={label}>
+          <Icon className="size-4 shrink-0" />
+          <span className={`flex-1 ${compact ? "md:hidden" : ""}`}>{label}</span>
+          {count ? <Count value={count} compact={compact} /> : null}
+        </NavLink>
+      </Tooltip>
     </li>
   );
 }
 
 function CategoryLink({ category, count, compact }: { category: CategoryDef; count?: number; compact: boolean }) {
   return (
-    <NavLink
-      to={`/category/${category.slug}`}
-      className={linkClass(compact)}
-      title={compact ? category.name : undefined}
-      aria-label={category.name}
-    >
-      {/* A colour dot; in the icons-only sidebar, the name's first letter on
-          the category colour so categories stay tellable apart. */}
-      <span className={`flex w-4 shrink-0 justify-center ${compact ? "md:hidden" : ""}`} aria-hidden>
-        <span className="size-2 rounded-full" style={{ backgroundColor: category.color }} />
-      </span>
-      {compact && (
-        <span
-          className="hidden size-5 shrink-0 items-center justify-center rounded-md text-[10px] font-semibold text-white md:flex"
-          style={{ backgroundColor: category.color }}
-          aria-hidden
-        >
-          {category.name.charAt(0)}
+    <Tooltip label={category.name} enabled={compact}>
+      <NavLink to={`/category/${category.slug}`} draggable={false} className={linkClass(compact)} aria-label={category.name}>
+        {/* A colour dot; in the icons-only sidebar, the name's first letter on
+            the category colour so categories stay tellable apart. */}
+        <span className={`flex w-4 shrink-0 justify-center ${compact ? "md:hidden" : ""}`} aria-hidden>
+          <span className="cat-dot size-2 rounded-full" style={{ backgroundColor: category.color }} />
         </span>
-      )}
-      <span className={`flex-1 truncate ${compact ? "md:hidden" : ""}`}>{category.name}</span>
-      {count ? <Count value={count} compact={compact} /> : null}
-    </NavLink>
+        {compact && (
+          <span
+            className="hidden size-6 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold text-title md:flex"
+            style={{ backgroundColor: `${category.color}59` }}
+            aria-hidden
+          >
+            {category.name.charAt(0)}
+          </span>
+        )}
+        <span className={`flex-1 truncate ${compact ? "md:hidden" : ""}`}>{category.name}</span>
+        {count ? <Count value={count} compact={compact} /> : null}
+      </NavLink>
+    </Tooltip>
   );
 }
 
 function Count({ value, compact }: { value: number; compact: boolean }) {
-  return <span className={`text-xs tabular-nums text-stone-400 ${compact ? "md:hidden" : ""}`}>{value}</span>;
+  return (
+    <span className={`rounded-full bg-white/10 px-1.5 text-[11px] font-medium tabular-nums text-body ${compact ? "md:hidden" : ""}`}>
+      {value}
+    </span>
+  );
 }

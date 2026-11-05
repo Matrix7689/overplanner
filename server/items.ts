@@ -167,6 +167,55 @@ export class ItemRepo {
     });
   }
 
+  // Deletes a category without losing anything. Its items lose the category
+  // and stay in their others, or move to the Inbox if it was their only one.
+  // The order matters: items are written to their new files before the old file
+  // is emptied and only then is the category removed, so an interruption at any
+  // point leaves every item findable (load() settles any duplicates).
+  removeCategory(slug: string): Promise<{ kept: number; toInbox: number }> {
+    return withWriteLock(async () => {
+      const category = this.categories.get(slug);
+      if (!category) throw new HttpError(404, "Category not found");
+      if (this.categories.children(slug).length > 0) {
+        throw new HttpError(409, `"${category.name}" still has subcategories. Delete or move them first.`);
+      }
+
+      const now = new Date().toISOString();
+      const affected = this.all().filter((it) => it.categories.includes(slug));
+      for (const it of affected) {
+        this.items.set(it.id, { ...it, categories: it.categories.filter((s) => s !== slug), updatedAt: now });
+      }
+
+      const oldFile = path.join(this.categoryDir, `${slug}.json`);
+      const files = new Set(affected.map((it) => this.fileFor(this.items.get(it.id)!)));
+      files.delete(oldFile);
+      files.add(oldFile); // last: its items are safe elsewhere by then
+      try {
+        await this.persist(files);
+      } catch (err) {
+        for (const it of affected) this.items.set(it.id, it);
+        throw err;
+      }
+
+      await this.categories.removeWhileLocked(slug);
+      try {
+        await fs.rm(oldFile, { force: true });
+      } catch (err) {
+        // Only an empty file is left behind, and load() reads it harmlessly.
+        console.warn(`Could not remove ${oldFile}:`, err);
+      }
+
+      this.emitChange();
+      const current = affected.filter((it) => it.status !== "deleted");
+      return { kept: current.length, toInbox: current.filter((it) => it.categories.length === 1).length };
+    });
+  }
+
+  // Search shows category names, so a rename has to refresh it.
+  notifyChanged(): void {
+    this.emitChange();
+  }
+
   private assertCategories(slugs: string[]): void {
     const unknown = slugs.filter((s) => !this.categories.has(s));
     if (unknown.length > 0) throw new HttpError(400, `Unknown categories: ${unknown.join(", ")}`);

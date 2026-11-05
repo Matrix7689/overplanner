@@ -55,7 +55,7 @@ export function CategoryPage() {
           <>
             {parent && (
               <>
-                <Link to={`/category/${parent.slug}`} className="underline hover:text-stone-800">
+                <Link to={`/category/${parent.slug}`} className="underline hover:text-title">
                   {parent.name}
                 </Link>
                 {" · "}
@@ -70,15 +70,15 @@ export function CategoryPage() {
 
       {subcategories.length > 0 && (
         <section className="mb-6">
-          <h2 className="mb-2 text-sm font-medium text-stone-500">Subcategories</h2>
+          <h2 className="mb-2 text-sm font-semibold text-title">Subcategories</h2>
           <div className="flex flex-wrap gap-2">
             {subcategories.map((c) => (
               <Link
                 key={c.slug}
                 to={`/category/${c.slug}`}
-                className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm hover:bg-stone-50"
+                className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm hover:bg-soft"
               >
-                <span className="size-2 rounded-full" style={{ backgroundColor: c.color }} aria-hidden />
+                <span className="cat-dot size-2 rounded-full" style={{ backgroundColor: c.color }} aria-hidden />
                 {c.name}
               </Link>
             ))}
@@ -95,14 +95,14 @@ export function CategoryPage() {
       </section>
 
       {open.length === 0 ? (
-        <section className="rounded-xl border border-stone-200 bg-white px-4">
-          <p className="py-6 text-center text-sm text-stone-400">No open tasks here.</p>
+        <section className="card-shadow rounded-2xl border border-line bg-surface px-4">
+          <p className="py-6 text-center text-sm text-faint">No open tasks here.</p>
         </section>
       ) : (
         <PinnedGroups
           items={open}
           render={(group) => (
-            <section className="rounded-xl border border-stone-200 bg-white px-4">
+            <section className="card-shadow rounded-2xl border border-line bg-surface px-4">
               <ItemList items={group} hideCategory={category.slug} compact={isList} />
             </section>
           )}
@@ -111,10 +111,10 @@ export function CategoryPage() {
 
       {done.length > 0 && (
         <details className="mt-6">
-          <summary className="cursor-pointer text-sm text-stone-500 select-none hover:text-stone-800">
+          <summary className="cursor-pointer text-sm text-caption select-none hover:text-title">
             Done ({done.length})
           </summary>
-          <div className="mt-2 rounded-xl border border-stone-200 bg-white px-4">
+          <div className="mt-2 card-shadow rounded-2xl border border-line bg-surface px-4">
             <ItemList items={done} hideCategory={category.slug} compact={isList} />
           </div>
         </details>
@@ -123,12 +123,12 @@ export function CategoryPage() {
       {(notes.length > 0 || archived.length > 0) && (
         <section id="notes" className="mt-8">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-stone-500">Notes ({notes.length})</h2>
+            <h2 className="text-sm font-medium text-caption">Notes ({notes.length})</h2>
             {archived.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowArchived((v) => !v)}
-                className="text-xs text-stone-500 underline hover:text-stone-800"
+                className="text-xs text-caption underline hover:text-title"
               >
                 {showArchived ? "Hide archived" : `Show archived (${archived.length})`}
               </button>
@@ -142,7 +142,7 @@ export function CategoryPage() {
 }
 
 function NoteGrid({ notes }: { notes: Note[] }) {
-  if (notes.length === 0) return <p className="text-sm text-stone-400">No active notes.</p>;
+  if (notes.length === 0) return <p className="text-sm text-faint">No active notes.</p>;
   return (
     <PinnedGroups
       items={notes}
@@ -180,5 +180,5 @@ function PinnedGroups<T extends Item>({ items, render }: { items: T[]; render: (
 }
 
 function GroupLabel({ children }: { children: ReactNode }) {
-  return <p className="mb-1.5 px-1 text-[11px] font-medium tracking-wide text-stone-400 uppercase">{children}</p>;
+  return <p className="mb-1.5 px-1 text-[11px] font-medium tracking-wide text-faint uppercase">{children}</p>;
 }

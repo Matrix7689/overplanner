@@ -51,27 +51,27 @@ export function ResultsPage() {
         <Stat label="Streak" value="—" hint="Definition pending" />
       </div>
 
-      <section className="mb-8 rounded-xl border border-stone-200 bg-white p-4">
-        <h2 className="mb-4 text-sm font-medium text-stone-500">Last {DAYS} days</h2>
+      <section className="mb-8 card-shadow rounded-2xl border border-line bg-surface p-4">
+        <h2 className="mb-4 text-sm font-semibold text-title">Last {DAYS} days</h2>
         <div className="flex h-32 gap-1.5">
           {stats.days.map((d) => (
             <div key={d.key} className="flex flex-1 flex-col items-center gap-1" title={`${d.key}: ${d.count}`}>
               <div className="flex w-full flex-1 items-end">
                 <div
-                  className="w-full rounded-t bg-stone-800"
+                  className="w-full rounded-t bg-accent"
                   style={{ height: `${(d.count / maxDay) * 100}%`, minHeight: d.count ? 4 : 0 }}
                 />
               </div>
-              <span className="text-[10px] text-stone-400">{d.label}</span>
+              <span className="text-[10px] text-faint">{d.label}</span>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="rounded-xl border border-stone-200 bg-white p-4">
-        <h2 className="mb-3 text-sm font-medium text-stone-500">By category</h2>
+      <section className="card-shadow rounded-2xl border border-line bg-surface p-4">
+        <h2 className="mb-3 text-sm font-semibold text-title">By category</h2>
         {stats.byCategory.length === 0 ? (
-          <p className="text-sm text-stone-400">Nothing completed yet.</p>
+          <p className="text-sm text-faint">Nothing completed yet.</p>
         ) : (
           <ul className="space-y-2">
             {stats.byCategory.map(({ category, count }) => (
@@ -79,13 +79,13 @@ export function ResultsPage() {
                 <span className="w-40 shrink-0 truncate">
                   {category.name}
                 </span>
-                <div className="h-2 flex-1 rounded-full bg-stone-100">
+                <div className="h-2 flex-1 rounded-full bg-soft">
                   <div
                     className="h-2 rounded-full"
                     style={{ width: `${(count / maxCat) * 100}%`, backgroundColor: category.color }}
                   />
                 </div>
-                <span className="w-6 text-right tabular-nums text-stone-500">{count}</span>
+                <span className="w-6 text-right tabular-nums text-caption">{count}</span>
               </li>
             ))}
           </ul>
@@ -97,10 +97,10 @@ export function ResultsPage() {
 
 function Stat({ label, value, hint }: { label: string; value: number | string; hint?: string }) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4">
-      <p className="text-xs text-stone-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-stone-400">{hint}</p>}
+    <div className="card-shadow rounded-2xl border border-line bg-surface p-4">
+      <p className="text-xs text-caption">{label}</p>
+      <p className="mt-1 text-2xl font-bold tracking-tight text-title">{value}</p>
+      {hint && <p className="mt-0.5 text-xs text-faint">{hint}</p>}
     </div>
   );
 }

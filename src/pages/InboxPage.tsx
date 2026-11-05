@@ -7,6 +7,7 @@ import { PageHeader } from "../components/PageHeader";
 import { QuickAdd } from "../components/QuickAdd";
 import { useSuggestions } from "../lib/useSuggestions";
 import { inboxItems, useStore } from "../store/useStore";
+import { Button } from "../ui/Button";
 
 // Uncategorized items and shared captures. Each item gets keyword
 // suggestions right away; "Ask JEV" refines them on demand.
@@ -23,9 +24,9 @@ export function InboxPage() {
       </section>
 
       {inbox.length === 0 ? (
-        <p className="py-10 text-center text-sm text-stone-400">Inbox zero.</p>
+        <p className="py-10 text-center text-sm text-faint">Inbox zero.</p>
       ) : (
-        <div className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white px-4">
+        <div className="divide-y divide-line card-shadow rounded-2xl border border-line bg-surface px-4">
           {inbox.map((it) => (
             <InboxRow key={it.id} item={it} />
           ))}
@@ -67,26 +68,21 @@ function InboxRow({ item }: { item: Item }) {
           jevError={suggestions.jevError}
         />
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={file}
-            disabled={!anySelected || saving}
-            className="rounded-md bg-stone-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-stone-700 disabled:opacity-40"
-          >
+          <Button size="xs" onClick={file} disabled={!anySelected || saving}>
             File
-          </button>
+          </Button>
           {suggestions.jevConfigured && (
-            <button
-              type="button"
+            <Button
+              variant="outlined"
+              size="xs"
               onClick={suggestions.requestJev}
               disabled={suggestions.jevStatus === "pending" || suggestions.jevStatus === "ok"}
-              className="inline-flex items-center gap-1 rounded-md border border-stone-200 px-2.5 py-1 text-xs text-stone-600 hover:bg-stone-50 disabled:opacity-40"
             >
               <Sparkles className="size-3" />
               Ask JEV
-            </button>
+            </Button>
           )}
-          {item.source === "share" && <span className="text-xs text-stone-400">Shared</span>}
+          {item.source === "share" && <span className="text-xs text-faint">Shared</span>}
         </div>
       </div>
     </div>

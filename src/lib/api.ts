@@ -9,6 +9,7 @@ import type {
   ItemQuery,
   Settings,
   SettingsPatch,
+  UpdateCategoryInput,
   UpdateItemInput,
 } from "../../shared/types";
 
@@ -36,6 +37,12 @@ function json(method: string, body: unknown): RequestInit {
 
 export const api = {
   categories: () => request<CategoryDef[]>("/categories"),
+
+  updateCategory: (slug: string, patch: UpdateCategoryInput) =>
+    request<CategoryDef[]>(`/categories/${encodeURIComponent(slug)}`, json("PATCH", patch)),
+
+  deleteCategory: (slug: string) =>
+    request<{ categories: CategoryDef[]; kept: number; toInbox: number }>(`/categories/${encodeURIComponent(slug)}`, { method: "DELETE" }),
 
   items: (query: ItemQuery = {}, signal?: AbortSignal) => {
     const params = new URLSearchParams();
