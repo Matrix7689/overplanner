@@ -8,7 +8,7 @@ import { useStore } from "../store/useStore";
 type Group = { key: string; label: string; overdue: boolean; items: Item[] };
 
 // Agenda view of open tasks by due date. Month/week layout and where undated
-// tasks belong are still open questions in SPEC.md.
+// tasks belong are still open questions.
 export function CalendarPage() {
   const items = useStore((s) => s.items);
 

@@ -1,5 +1,5 @@
 // Types shared by the web app and the Express server, inferred from the Zod
-// schemas in schemas.ts. Field meanings follow SPEC.md.
+// schemas in schemas.ts.
 import type { z } from "zod";
 import type {
   BackupStateSchema,

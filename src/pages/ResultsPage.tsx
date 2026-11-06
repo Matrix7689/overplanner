@@ -7,7 +7,7 @@ import { useStore } from "../store/useStore";
 const DAYS = 14;
 
 // Progress from done items. The definition of a streak and the final weekly
-// chart are open items in SPEC.md; these are placeholders built on mock data.
+// chart are still to be decided.
 export function ResultsPage() {
   const items = useStore((s) => s.items);
   const categories = useStore((s) => s.categories);

@@ -7,6 +7,7 @@
 - A secret scan withholds anything that looks like a password or code, and the report masks what it flagged
 - Notes keep single line breaks instead of joining the lines
 - New installs start from a standard category set in `defaults/categories.json`; all of `data/` is now git-ignored, so your own categories stay local
+- README rewritten around simple install steps, with the technical reference moved to `docs/DETAILS.md`; `SPEC.md` is now a local file
 - `npm run import -- --make-csv` writes a starter classification file; the importer also reads iPhone and 12-hour WhatsApp exports. Step-by-step guide in `docs/IMPORTING.md`
 
 ## 0.13.0 - 2026-11-05

@@ -1,138 +1,117 @@
 # Overplanner
 
-A self-hosted task and list manager, built as an alternative to Google Keep. It runs on your PC and is reachable from your phone. Items are classified into categories when added, and search runs locally.
+A self-hosted task and notes app, built as an alternative to Google Keep. It runs on your own computer, keeps your data in plain files, and lets you add to it from your phone.
 
-See [SPEC.md](SPEC.md) for the full specification.
+## Screenshots
 
-## Status
+### Web app
 
-- Phase 1 (skeleton): Vite + React + TypeScript, React Router, Zustand, Tailwind CSS.
-- Phase 2 (local API): Express server, JSON storage validated with Zod, item CRUD, Fuse.js search, 30-day purge of deleted items.
-- Phase 3 (classification): keyword rules, JEV client, suggestion chips in Quick Add and the Inbox, feedback logging.
-- Phase 4 (backup): 6-hourly snapshots of `data/` to a Google Drive folder, status in the top bar, Force Backup.
-- Phase 5 (capture): an installable capture app for the phone at `/capture/`, with an offline queue and Android's share menu.
-- Phase 6 (imports): bring in Google Keep and WhatsApp exports. See [docs/IMPORTING.md](docs/IMPORTING.md).
+Coming soon...
 
-## Run
+### Mobile app
 
-Requires Node.js 20.19+ or 22.12+.
+Coming soon...
+
+## Features
+
+- Tasks, notes, checklists and pins
+- Categories and lists, suggested as you type
+- A dashboard of cards you can drag to reorder, plus a calendar, progress charts and search across everything
+- Light and dark modes, with your own colors and font
+- A phone app for quick capture that works offline
+- Automatic backups to any folder, including Google Drive
+- Import from Google Keep and WhatsApp
+
+## Install
+
+You need [Git](https://git-scm.com/downloads) and [Node.js](https://nodejs.org) 22.12 or newer (20.19 or newer also works).
+
+**1. Download the code**
+
+```bash
+git clone https://github.com/Matrix7689/overplanner.git
+cd overplanner
+```
+
+**2. Install what it needs**
 
 ```bash
 npm install
-npm run dev
 ```
 
-Then open http://localhost:5173. This starts the API on 127.0.0.1:3030 and the Vite dev server, which forwards `/api` to it.
-
-To run a single server that serves the built app and the API:
+**3. Build and start it**
 
 ```bash
 npm run build
 npm start
 ```
 
-Then open http://localhost:3030.
+**4. Open the app**
 
-To keep that server running whenever you're signed in to Windows, run this once. It registers a scheduled task for your user (no admin rights needed) that restarts the server if it crashes and logs to `logs/server.log`:
+Go to [http://localhost:3030](http://localhost:3030). To stop it, press `Ctrl+C` in the terminal.
+
+Your data is saved in a `data/` folder, created the first time it runs. It starts with a standard set of categories, which you can change in **Settings > Categories**.
+
+## Optional setup
+
+### Keep it running (Windows)
+
+This starts Overplanner whenever you sign in to Windows and restarts it if it crashes. Run it once, after `npm run build`:
 
 ```bash
 powershell -ExecutionPolicy Bypass -File scripts\install-autostart.ps1
 ```
 
-After pulling changes, run `npm run build` and restart the task. `npm run dev` uses the same port, so stop the task first, or set `API_PORT` to another port for that shell and for Vite.
+### Add from your phone
 
-## Phone capture
+Your phone and computer connect privately through [Tailscale](https://tailscale.com), so nothing is exposed to the internet.
 
-`/capture/` is a small separate app for the phone: a text box, a Task/Note switch and a list of what's waiting. It only ever sends items to the PC's Inbox (uncategorized, to be filed from the PC) and never downloads anything, so none of your other data is on the phone.
-
-It keeps working with the PC off. Items wait in a queue on the phone and are sent when the PC can be reached: when the app opens, every 30 seconds while it's open, with "Send now", and in the background on Android. Each item carries its own id, so a repeated send can't create a duplicate, and its capture time is kept.
-
-Setting it up (phone and PC need the same Tailscale account):
-
-1. Install [Tailscale](https://tailscale.com/download) on the PC and the phone, and sign in on both.
-2. In the [Tailscale admin console](https://login.tailscale.com/admin/dns), turn on MagicDNS and HTTPS Certificates.
-3. Start the always-on server (above), then share it on your tailnet only. This is not exposed to the internet:
+1. Install [Tailscale](https://tailscale.com/download) on both, and sign in to the same account.
+2. In the [Tailscale admin console](https://login.tailscale.com/admin/dns), turn on **MagicDNS** and **HTTPS Certificates**.
+3. With Overplanner running, run this on your computer:
 
    ```bash
    tailscale serve --bg 3030
    ```
 
-4. On the phone, open `https://<pc-name>.<tailnet>.ts.net/capture/` in Chrome and choose **Add to Home screen** (or **Install app**).
+4. On your phone, open `https://<pc-name>.<tailnet>.ts.net/capture/` in Chrome and choose **Add to Home screen**.
 
-"Capture" then appears on the home screen and in Android's share menu. Shared items are saved as notes. The full app is at the same address without `/capture/`.
+The full app is at the same address without `/capture/`.
 
-### Environment
+### Back up your data
 
-Settings come from environment variables or a `.env` file in the project root (git-ignored; copy `.env.example`). Real environment variables win over `.env`.
+In **Settings > Backup**, choose a folder. A Google Drive for desktop folder also keeps a copy in the cloud.
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `JEV_API_KEY` | none | TypeSafe AI key. Without it, suggestions use keyword rules only |
-| `JEV_MODEL` | `jev-latest` | JEV model or alias |
-| `JEV_BASE_URL` | `https://api.typesafe.ai/v1` | JEV API base URL |
-| `JEV_TIMEOUT_MS` | `8000` | After this, the keyword guess is used |
-| `API_PORT` | `3030` | API (and built app) port |
-| `HOST` | `127.0.0.1` | Bind address. Phones reach it through `tailscale serve` |
-| `DATA_DIR` | `./data` | Where the JSON files live |
+### Import from Google Keep and WhatsApp
 
-## Classification
+Follow [docs/IMPORTING.md](docs/IMPORTING.md).
 
-1. Keyword rules run first. Each category's `keywords` in `categories.json` are matched as whole words (plurals too); entries with punctuation such as `youtube.com` or `$` match anywhere. One hit scores 0.85, two or more 0.95.
-2. JEV (`POST /v1/systemone`) gets one `score` question per category, built from its name and description plus a few of your past corrections. The 0–2 rubric result is scaled to 0–1. The final score per category is the higher of the keyword and JEV scores.
-3. Chips: at or above the auto-select threshold (0.80) they start selected; from the "Maybe" threshold (0.40) they show unselected. Both are adjustable in Settings. With nothing selected, the item goes to the Inbox.
-4. Saving never waits on JEV. If it fails or times out, the keyword guess is used.
-5. Whenever you save categories that differ from the pre-selected ones, or change an item's categories later, the example goes to `data/feedback.json`.
+### Smarter suggestions
 
-Quick Add on the Dashboard and Inbox asks JEV after a short pause in typing. In the Inbox, items get keyword suggestions at once and "Ask JEV" on demand.
+Suggestions use keyword rules out of the box. For AI suggestions from [TypeSafe AI](https://typesafe.ai), copy `.env.example` to `.env`, add your key as `JEV_API_KEY`, and restart. The text you're classifying is then sent to their service.
 
-## Backup
+## Update
 
-Set the backup folder in Settings, for example `G:\My Drive\Overplanner backups` (a Google Drive for desktop folder, so it syncs to the cloud).
+Stop the app, then run:
 
-- Every 6 hours (00:00, 06:00, 12:00, 18:00) the whole `data/` folder is copied into a new folder named `overplanner-YYYY-MM-DD_HHMMSS`. If the PC was off at those times, a backup runs when the server starts.
-- The copy is taken while writes are paused, so it's consistent. It's written as `….partial` and renamed when complete.
-- The newest 28 snapshots are kept (adjustable). Pruning only removes `overplanner-…` folders; anything else in the folder is left alone.
-- If the folder's parent is missing (Google Drive not running), the backup fails with a message and the top bar shows "Last backup failed".
-- To restore, stop the server and copy a snapshot's contents back into `data/`.
+```bash
+git pull
+npm install
+npm run build
+npm start
+```
 
-## Import
+## Develop
 
-Bring in your Google Keep notes and WhatsApp chats with `npm run import`. [docs/IMPORTING.md](docs/IMPORTING.md) covers exporting the data and running the import, step by step.
+Stop the app first, because this uses the same port:
 
-## Data
+```bash
+npm run dev
+```
 
-All data is in `data/`:
+Then open [http://localhost:5173](http://localhost:5173).
 
-- `categories.json` your categories and lists. Created on first run from [defaults/categories.json](defaults/categories.json), then yours to change in Settings
-- `categories/<slug>.json` items, one file per category or list. An item with several categories is stored once, in the file of its first category
-- `inbox.json` items with no category
-- `settings.json` thresholds, backup path, UI preferences (`ui.theme`: `system`, `light` or `dark`; `ui.font`; `ui.customPalette`: six HEX colors, or `null` for the defaults; `ui.sidebarCollapsed`; `ui.collapsedSections`; `ui.dashboardOrder`)
-- `feedback.json` classification corrections
-- `backup.json` outcome of the last backups
+## Learn more
 
-All of `data/` is personal and git-ignored, so your categories and items never reach the repository. Writes are atomic (temp file, then rename) and every read and write is validated. If a file fails validation, the server refuses to start and names the problem rather than overwriting it.
-
-## API
-
-| Method | Path | |
-|---|---|---|
-| GET | `/api/categories` | Master list |
-| GET | `/api/items` | Tasks and notes (never deleted ones). Query: `q`, `kind` (`task`/`note`), `status` (`open`/`done`/`active`/`archived`), `category`, `source`, `dueFrom`, `dueTo` |
-| GET | `/api/items/:id` | One item |
-| POST | `/api/items` | Create a task (`kind` `task`/`list-item`, default) or a note (`kind: "note"`, `body`) |
-| PATCH | `/api/items/:id` | Update any fields; changing `kind` converts between task and note and keeps the id |
-| DELETE | `/api/items/:id` | Soft delete; purged 30 days later |
-| POST | `/api/classify` | `{ text, jev? }` → scores per category. `jev: false` for keyword rules only |
-| GET | `/api/classify/status` | JEV configured, last call, number of corrections |
-| GET | `/api/backup` | Backup status: last success, last error, next run |
-| POST | `/api/backup` | Force Backup; returns the status when done |
-| GET, PATCH | `/api/settings` | Settings |
-
-## Layout
-
-- `src/` web app (pages, components, Zustand store, API client)
-- `server/` Express API, storage, search, purge job, classification (`server/classify/`)
-- `shared/` Zod schemas and types used by both
-- `defaults/` the categories a new install starts with
-- `scripts/` importer and Windows autostart
-- `docs/` guides
+- [Technical details](docs/DETAILS.md): settings, how classification and backups work, data files and the API
+- [Changelog](CHANGELOG.md)

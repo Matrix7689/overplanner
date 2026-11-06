@@ -21,5 +21,6 @@ overplanner_classification.csv
 import-overrides.json
 import-report.md
 
-# Local tool settings.
+# Local tool settings and private planning notes.
 .claude/
+SPEC.md
