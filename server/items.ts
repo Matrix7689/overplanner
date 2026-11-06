@@ -167,6 +167,25 @@ export class ItemRepo {
     });
   }
 
+  // Adds complete items from an import, with their own history (completed or
+  // archived long ago). Ids already present are left as they are, so an import
+  // can be re-run without duplicates or overwriting later edits.
+  importItems(incoming: Item[]): Promise<{ added: number; existing: number }> {
+    return withWriteLock(async () => {
+      const fresh = incoming.filter((it) => !this.items.has(it.id)).map((it) => ItemSchema.parse(it));
+      for (const it of fresh) this.assertCategories(it.categories);
+      for (const it of fresh) this.items.set(it.id, it);
+      try {
+        await this.persist(new Set(fresh.map((it) => this.fileFor(it))));
+      } catch (err) {
+        for (const it of fresh) this.items.delete(it.id);
+        throw err;
+      }
+      this.emitChange();
+      return { added: fresh.length, existing: incoming.length - fresh.length };
+    });
+  }
+
   // Deletes a category without losing anything. Its items lose the category
   // and stay in their others, or move to the Inbox if it was their only one.
   // The order matters: items are written to their new files before the old file

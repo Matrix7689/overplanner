@@ -1,8 +1,10 @@
 import ReactMarkdown, { type Components } from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
 // Renders a note body. Raw HTML is not rendered (react-markdown's default),
-// and unsafe link protocols are dropped. Links open in a new tab.
+// and unsafe link protocols are dropped. Links open in a new tab. A line break
+// stays a line break, as in Keep and WhatsApp, rather than joining the lines.
 const components: Components = {
   a: ({ children, href }) => (
     <a
@@ -32,7 +34,7 @@ const components: Components = {
 export function Markdown({ children, className = "" }: { children: string; className?: string }) {
   return (
     <div className={`text-sm leading-relaxed break-words text-body ${className}`}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={components}>
         {children}
       </ReactMarkdown>
     </div>

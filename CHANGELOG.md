@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.0 - 2026-11-06
+
+- Phase 6: `npm run import` brings in a Google Keep Takeout and a WhatsApp export using a hand-made classification CSV. It's a dry run unless `--apply` is passed, and it can be re-run without duplicates
+- Five big Keep to-do lists split into one task per line; checklists, pins, archive state and original dates are kept, so old completions don't count as recent ones
+- A secret scan withholds anything that looks like a password or code, and the report masks what it flagged
+- Notes keep single line breaks instead of joining the lines
+- New installs start from a standard category set in `defaults/categories.json`; all of `data/` is now git-ignored, so your own categories stay local
+- `npm run import -- --make-csv` writes a starter classification file; the importer also reads iPhone and 12-hour WhatsApp exports. Step-by-step guide in `docs/IMPORTING.md`
+
 ## 0.13.0 - 2026-11-05
 
 - Sidebar: Search link below Inbox, and larger Categories and Lists headings

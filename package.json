@@ -1,7 +1,7 @@
 {
   "name": "overplanner",
   "private": true,
-  "version": "0.13.0",
+  "version": "0.14.0",
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
@@ -9,6 +9,7 @@
     "dev:web": "vite",
     "build": "tsc -b && vite build",
     "start": "tsx server/index.ts",
+    "import": "tsx scripts/import-exports.ts",
     "typecheck": "tsc -b"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
     "react-router": "^7.6.0",
+    "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.7.0",
     "tailwind-variants": "^1.0.0",

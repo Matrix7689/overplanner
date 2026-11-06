@@ -8,10 +8,18 @@ logs
 .env
 .DS_Store
 
-# Personal data written by the server. categories.json stays tracked as the seed.
-data/categories/
-data/inbox.json
-data/settings.json
-data/feedback.json
-data/backup.json
-data/*.tmp
+# Personal data. The server creates data/ on first run, seeding your own
+# categories from defaults/categories.json, and everything in it stays local.
+data/
+
+# Exports and the files made while importing them (docs/IMPORTING.md).
+exports/
+Takeout*/
+Keep JSON/
+WhatsApp Chat*/
+overplanner_classification.csv
+import-overrides.json
+import-report.md
+
+# Local tool settings.
+.claude/

@@ -15,8 +15,8 @@ export const config = {
   // proxies HTTPS on the tailnet to this address.
   host: process.env.HOST ?? "127.0.0.1",
   dataDir: path.resolve(process.env.DATA_DIR ?? path.join(root, "data")),
-  // Used when DATA_DIR has no categories.json yet.
-  seedCategoriesFile: path.join(root, "data", "categories.json"),
+  // Copied to DATA_DIR on first run. After that, DATA_DIR holds your own set.
+  seedCategoriesFile: path.join(root, "defaults", "categories.json"),
   distDir: path.join(root, "dist"),
 
   jev: {

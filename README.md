@@ -1,6 +1,6 @@
 # Overplanner
 
-A personal task and list manager that replaces Google Keep for me. It runs on my PC and is reachable from my phone. Items are classified into categories when added, and search runs locally.
+A self-hosted task and list manager, built as an alternative to Google Keep. It runs on your PC and is reachable from your phone. Items are classified into categories when added, and search runs locally.
 
 See [SPEC.md](SPEC.md) for the full specification.
 
@@ -9,8 +9,9 @@ See [SPEC.md](SPEC.md) for the full specification.
 - Phase 1 (skeleton): Vite + React + TypeScript, React Router, Zustand, Tailwind CSS.
 - Phase 2 (local API): Express server, JSON storage validated with Zod, item CRUD, Fuse.js search, 30-day purge of deleted items.
 - Phase 3 (classification): keyword rules, JEV client, suggestion chips in Quick Add and the Inbox, feedback logging.
-- Phase 4 (backup): 6-hourly snapshots of `data/` to a Google Drive folder, status on the Dashboard, Force Backup.
+- Phase 4 (backup): 6-hourly snapshots of `data/` to a Google Drive folder, status in the top bar, Force Backup.
 - Phase 5 (capture): an installable capture app for the phone at `/capture/`, with an offline queue and Android's share menu.
+- Phase 6 (imports): bring in Google Keep and WhatsApp exports. See [docs/IMPORTING.md](docs/IMPORTING.md).
 
 ## Run
 
@@ -94,18 +95,22 @@ Set the backup folder in Settings, for example `G:\My Drive\Overplanner backups`
 - If the folder's parent is missing (Google Drive not running), the backup fails with a message and the top bar shows "Last backup failed".
 - To restore, stop the server and copy a snapshot's contents back into `data/`.
 
+## Import
+
+Bring in your Google Keep notes and WhatsApp chats with `npm run import`. [docs/IMPORTING.md](docs/IMPORTING.md) covers exporting the data and running the import, step by step.
+
 ## Data
 
 All data is in `data/`:
 
-- `categories.json` master list (tracked in git as the seed)
+- `categories.json` your categories and lists. Created on first run from [defaults/categories.json](defaults/categories.json), then yours to change in Settings
 - `categories/<slug>.json` items, one file per category or list. An item with several categories is stored once, in the file of its first category
 - `inbox.json` items with no category
 - `settings.json` thresholds, backup path, UI preferences (`ui.theme`: `system`, `light` or `dark`; `ui.font`; `ui.customPalette`: six HEX colors, or `null` for the defaults; `ui.sidebarCollapsed`; `ui.collapsedSections`; `ui.dashboardOrder`)
 - `feedback.json` classification corrections
 - `backup.json` outcome of the last backups
 
-Everything except `categories.json` is personal data and is git-ignored. Writes are atomic (temp file, then rename) and every read and write is validated. If a file fails validation, the server refuses to start and names the problem rather than overwriting it.
+All of `data/` is personal and git-ignored, so your categories and items never reach the repository. Writes are atomic (temp file, then rename) and every read and write is validated. If a file fails validation, the server refuses to start and names the problem rather than overwriting it.
 
 ## API
 
@@ -128,3 +133,6 @@ Everything except `categories.json` is personal data and is git-ignored. Writes 
 - `src/` web app (pages, components, Zustand store, API client)
 - `server/` Express API, storage, search, purge job, classification (`server/classify/`)
 - `shared/` Zod schemas and types used by both
+- `defaults/` the categories a new install starts with
+- `scripts/` importer and Windows autostart
+- `docs/` guides
