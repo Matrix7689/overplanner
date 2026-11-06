@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.0 - 2026-11-06
+
+- Copy to clipboard: a button in the item editor, and beside Delete when you hover over a task. It copies the title, details and checklist as plain text; the editor copies what's on screen, including unsaved edits
+
 ## 0.14.0 - 2026-11-06
 
 - Phase 6: `npm run import` brings in a Google Keep Takeout and a WhatsApp export using a hand-made classification CSV. It's a dry run unless `--apply` is passed, and it can be re-run without duplicates

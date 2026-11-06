@@ -4,6 +4,8 @@ import {
   ArchiveRestore,
   Check,
   CheckSquare,
+  ClipboardCheck,
+  Copy,
   Pin,
   PinOff,
   Plus,
@@ -14,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { isNote, type ChecklistEntry, type Item, type UpdateItemInput } from "../../shared/types";
+import { COPY_LABELS, itemAsText, useCopy } from "../lib/clipboard";
 import { newId } from "../lib/id";
 import { useStore } from "../store/useStore";
 import { Button } from "../ui/Button";
@@ -101,6 +104,7 @@ function EditorPanel({ item, onClose }: { item: Item; onClose: () => void }) {
   const dirty = Object.keys(patch).length > 0;
   const note = draft.kind === "note";
   const set = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
+  const { state: copyState, copy } = useCopy();
 
   const requestClose = async () => {
     if (dirty && !(await confirmDialog({ title: "Discard your changes?", confirmLabel: "Discard", danger: true }))) return;
@@ -158,6 +162,7 @@ function EditorPanel({ item, onClose }: { item: Item; onClose: () => void }) {
         <div className="flex items-center gap-2 border-b border-line px-4 py-3">
           <Segmented
             label="Type"
+            compactLabels
             value={note ? "note" : "task"}
             onChange={(v) => set({ kind: v === "note" ? "note" : item.kind === "list-item" ? "list-item" : "task" })}
             options={[
@@ -168,6 +173,14 @@ function EditorPanel({ item, onClose }: { item: Item; onClose: () => void }) {
           <div className="ml-auto flex items-center gap-1.5">
             <HeaderButton label={draft.pinned ? "Unpin" : "Pin"} onClick={() => set({ pinned: !draft.pinned })} tone={draft.pinned ? "pinned" : "pin"}>
               {draft.pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
+            </HeaderButton>
+            {/* Copies what's on screen, including edits not saved yet. */}
+            <HeaderButton
+              label={COPY_LABELS[copyState]}
+              onClick={() => void copy(itemAsText(draft))}
+              tone={copyState === "copied" ? "done" : copyState === "failed" ? "delete" : "copy"}
+            >
+              {copyState === "copied" ? <ClipboardCheck className="size-4" /> : copyState === "failed" ? <X className="size-4" /> : <Copy className="size-4" />}
             </HeaderButton>
             {sameKindFamily &&
               (note ? (
@@ -380,6 +393,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 const HEADER_TONES = {
   pin: "bg-warn-soft text-warn",
   pinned: "bg-warn text-surface",
+  copy: "bg-soft text-body",
   done: "bg-ok-soft text-ok",
   delete: "bg-danger-soft text-danger",
   close: "bg-line text-title",

@@ -1,6 +1,7 @@
-import { ListChecks, Pin, StickyNote, Trash2 } from "lucide-react";
+import { ClipboardCheck, Copy, ListChecks, Pin, StickyNote, Trash2, X } from "lucide-react";
 import { useMemo } from "react";
 import { displayTitle, isNote, type Item } from "../../shared/types";
+import { COPY_LABELS, itemAsText, useCopy } from "../lib/clipboard";
 import { formatDueLabel, isOverdue } from "../lib/dates";
 import { useStore } from "../store/useStore";
 import { Checkbox } from "../ui/Checkbox";
@@ -40,6 +41,8 @@ export function ItemRow({ item, showCategories = true, hideCategory, compact = f
   const snippet = note ? item.body : item.notes;
   const title = displayTitle(item);
   const checked = item.checklist.filter((e) => e.checked).length;
+
+  const { state: copyState, copy } = useCopy();
 
   const toggle = () => setStatus(item.id, done ? "open" : "done");
   const remove = async () => {
@@ -87,14 +90,32 @@ export function ItemRow({ item, showCategories = true, hideCategory, compact = f
           titles stay aligned with the rows around them. */}
       {item.pinned && <Pin className="mt-1 size-3.5 shrink-0 rotate-45 text-faint" aria-label="Pinned" />}
 
-      <button
-        type="button"
-        onClick={() => void remove()}
-        className="rounded-lg p-1 text-faint opacity-100 transition-opacity hover:bg-soft hover:text-danger md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100"
-        aria-label="Delete"
-      >
-        <Trash2 className="size-4" />
-      </button>
+      <div className="flex shrink-0 gap-0.5">
+        <button
+          type="button"
+          onClick={() => void copy(itemAsText({ title: item.title, text: snippet, checklist: item.checklist }))}
+          className={`rounded-lg p-1 transition-opacity hover:bg-soft md:group-hover:opacity-100 md:focus-visible:opacity-100 ${
+            copyState === "copied"
+              ? "text-ok"
+              : copyState === "failed"
+                ? "text-danger"
+                : "text-faint opacity-100 hover:text-title md:opacity-0"
+          }`}
+          aria-label={COPY_LABELS[copyState]}
+          title={COPY_LABELS[copyState]}
+        >
+          {copyState === "copied" ? <ClipboardCheck className="size-4" /> : copyState === "failed" ? <X className="size-4" /> : <Copy className="size-4" />}
+        </button>
+        <button
+          type="button"
+          onClick={() => void remove()}
+          className="rounded-lg p-1 text-faint opacity-100 transition-opacity hover:bg-soft hover:text-danger md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+          aria-label="Delete"
+          title="Delete"
+        >
+          <Trash2 className="size-4" />
+        </button>
+      </div>
     </li>
   );
 }
