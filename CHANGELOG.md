@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.17.0 - 2026-11-09
+
+- Dashboard: a Pinned Tasks toggle that shows only the pinned tasks from each category
+
 ## 0.16.0 - 2026-11-09
 
 - Results: removed Streak, and added a linked pie and bar chart of completed tasks per category. Hover to preview a category, click to keep it selected

@@ -45,7 +45,25 @@ export function DashboardPage() {
       .sort((a, b) => a.key - b.key)
       .map(({ card }) => card);
   }, [cards, savedOrder]);
-  const cardsBySlug = useMemo(() => new Map(cards.map((c) => [c.category.slug, c])), [cards]);
+
+  // With the toggle on, cards show only pinned tasks and empty cards are hidden.
+  const [pinnedOnly, setPinnedOnly] = useState(false);
+  const shownCards = useMemo(
+    () =>
+      pinnedOnly
+        ? orderedCards
+            .map((c) => ({ ...c, items: c.items.filter((it) => it.pinned), noteCount: 0 }))
+            .filter((c) => c.items.length > 0)
+        : orderedCards,
+    [orderedCards, pinnedOnly],
+  );
+  const cardsBySlug = useMemo(() => new Map(shownCards.map((c) => [c.category.slug, c])), [shownCards]);
+
+  // Hidden cards keep their places: the reordered cards only swap among the shown slots.
+  const reorderShown = (ids: string[]) => {
+    const next = [...ids];
+    setDashboardOrder(orderedCards.map((c) => (cardsBySlug.has(c.category.slug) ? next.shift()! : c.category.slug)));
+  };
 
   const now = new Date();
   const date = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
@@ -121,24 +139,43 @@ export function DashboardPage() {
         <div className="mb-3 flex items-baseline gap-3 px-1">
           <h2 className="text-sm font-semibold text-title">Categories</h2>
           <span className="hidden text-xs text-faint sm:inline">Drag cards to reorder</span>
-          {savedOrder.length > 0 && (
+          <div className="ml-auto flex items-center gap-3">
+            {savedOrder.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setDashboardOrder([])}
+                className="text-xs text-caption underline hover:text-title"
+              >
+                Reset order
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => setDashboardOrder([])}
-              className="ml-auto text-xs text-caption underline hover:text-title"
+              aria-pressed={pinnedOnly}
+              onClick={() => setPinnedOnly((on) => !on)}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                pinnedOnly
+                  ? "border-accent bg-accent text-white"
+                  : "border-line bg-surface text-caption hover:text-title"
+              }`}
             >
-              Reset order
+              <Pin className="size-3.5" />
+              Pinned Tasks
             </button>
-          )}
+          </div>
         </div>
-        <SortableCardGrid
-          ids={orderedCards.map((c) => c.category.slug)}
-          onReorder={setDashboardOrder}
-          renderCard={(slug) => {
-            const card = cardsBySlug.get(slug)!;
-            return <Swimlane category={card.category} items={card.items} noteCount={card.noteCount} />;
-          }}
-        />
+        {shownCards.length === 0 ? (
+          <p className="px-1 py-4 text-sm text-faint">No pinned tasks.</p>
+        ) : (
+          <SortableCardGrid
+            ids={shownCards.map((c) => c.category.slug)}
+            onReorder={reorderShown}
+            renderCard={(slug) => {
+              const card = cardsBySlug.get(slug)!;
+              return <Swimlane category={card.category} items={card.items} noteCount={card.noteCount} />;
+            }}
+          />
+        )}
       </section>
     </>
   );
