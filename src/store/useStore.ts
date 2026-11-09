@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS, isCurrent } from "../../shared/types";
 import type {
   BackupStatus,
   CategoryDef,
+  CreateCategoryInput,
   ClassifierStatus,
   CreateItemInput,
   Item,
@@ -53,6 +54,7 @@ type State = {
   toggleSection: (section: SidebarSection) => void;
   setDashboardOrder: (slugs: string[]) => void;
   // Returns the server's reason if the change was refused, otherwise null.
+  addCategory: (input: CreateCategoryInput) => Promise<string | null>;
   updateCategory: (slug: string, patch: UpdateCategoryInput) => Promise<string | null>;
   deleteCategory: (slug: string) => Promise<void>;
 };
@@ -121,6 +123,15 @@ export const useStore = create<State>()((set, get) => {
     toggleSidebar: () => get().updateSettings({ ui: { sidebarCollapsed: !get().settings.ui.sidebarCollapsed } }),
 
     setDashboardOrder: (slugs) => get().updateSettings({ ui: { dashboardOrder: slugs } }),
+
+    addCategory: async (input) => {
+      try {
+        set({ categories: await api.createCategory(input) });
+        return null;
+      } catch (err) {
+        return err instanceof Error ? err.message : String(err);
+      }
+    },
 
     updateCategory: async (slug, patch) => {
       try {

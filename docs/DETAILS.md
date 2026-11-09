@@ -78,6 +78,7 @@ All of `data/` is personal and git-ignored, so your categories and items never r
 | Method | Path | |
 |---|---|---|
 | GET | `/api/categories` | Master list |
+| POST | `/api/categories` | Add a category or list; the ID comes from its name |
 | GET | `/api/items` | Tasks and notes (never deleted ones). Query: `q`, `kind` (`task`/`note`), `status` (`open`/`done`/`active`/`archived`), `category`, `source`, `dueFrom`, `dueTo` |
 | GET | `/api/items/:id` | One item |
 | POST | `/api/items` | Create a task (`kind` `task`/`list-item`, default) or a note (`kind: "note"`, `body`) |

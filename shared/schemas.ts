@@ -30,9 +30,8 @@ export const CategoryDefSchema = z.object({
 
 export const CategoriesFileSchema = z.array(CategoryDefSchema);
 
-// PATCH /api/categories/:slug. The slug can't change: it names the category's
-// data file and every item refers to it.
-export const UpdateCategorySchema = z
+// POST /api/categories. The server derives the slug from the name.
+export const CreateCategorySchema = z
   .object({
     name: z.string().trim().min(1, "A category needs a name").max(60),
     description: z.string().trim().max(2000),
@@ -43,8 +42,11 @@ export const UpdateCategorySchema = z
     showOnDashboard: z.boolean(),
     suggest: z.boolean(),
   })
-  .strict()
-  .partial();
+  .strict();
+
+// PATCH /api/categories/:slug. The slug can't change: it names the category's
+// data file and every item refers to it.
+export const UpdateCategorySchema = CreateCategorySchema.partial();
 
 // ---- Items ----
 

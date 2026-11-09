@@ -7,6 +7,7 @@ import {
   CreateItemSchema,
   ItemQuerySchema,
   SettingsPatchSchema,
+  CreateCategorySchema,
   UpdateCategorySchema,
   UpdateItemSchema,
 } from "../shared/schemas";
@@ -52,6 +53,12 @@ export function createApp({ categories, items, settings, search, classifier, fee
 
   api.get("/categories", (_req, res) => {
     res.json(categories.all());
+  });
+
+  api.post("/categories", async (req, res) => {
+    const list = await categories.create(CreateCategorySchema.parse(req.body));
+    items.notifyChanged();
+    res.status(201).json(list);
   });
 
   api.patch("/categories/:slug", async (req, res) => {

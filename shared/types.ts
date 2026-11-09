@@ -22,6 +22,7 @@ import type {
   SettingsSchema,
   SidebarSectionSchema,
   ThemeSchema,
+  CreateCategorySchema,
   UpdateCategorySchema,
   UpdateItemSchema,
 } from "./schemas";
@@ -115,6 +116,7 @@ export type Theme = z.infer<typeof ThemeSchema>;
 export type Palette = z.infer<typeof PaletteSchema>;
 export type FontId = z.infer<typeof FontSchema>;
 export type UpdateCategoryInput = z.input<typeof UpdateCategorySchema>;
+export type CreateCategoryInput = z.input<typeof CreateCategorySchema>;
 export type SidebarSection = z.infer<typeof SidebarSectionSchema>;
 export type Settings = z.infer<typeof SettingsSchema>;
 export type SettingsPatch = z.input<typeof SettingsPatchSchema>;

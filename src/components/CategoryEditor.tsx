@@ -12,31 +12,52 @@ import { Select } from "../ui/Select";
 
 const splitKeywords = (text: string) => [...new Set(text.split(",").map((k) => k.trim()).filter(Boolean))];
 
-// Edits one entry of data/categories.json. The ID isn't editable: it names the
-// category's data file and every item refers to it.
-export function CategoryEditor({ category, onClose }: { category: CategoryDef; onClose: () => void }) {
+// Adds or edits one entry of data/categories.json; without a category it adds a
+// new one. The ID isn't editable: it names the category's data file and every
+// item refers to it.
+export function CategoryEditor({
+  category,
+  newKind = "category",
+  onClose,
+}: {
+  category?: CategoryDef;
+  newKind?: CategoryDef["kind"];
+  onClose: () => void;
+}) {
   const categories = useStore((s) => s.categories);
+  const addCategory = useStore((s) => s.addCategory);
   const updateCategory = useStore((s) => s.updateCategory);
 
-  const [name, setName] = useState(category.name);
-  const [description, setDescription] = useState(category.description);
-  const [color, setColor] = useState(category.color);
-  const [kind, setKind] = useState(category.kind);
-  const [parent, setParent] = useState(category.parent ?? "");
-  const [keywords, setKeywords] = useState(category.keywords.join(", "));
-  const [showOnDashboard, setShowOnDashboard] = useState(category.showOnDashboard);
-  const [suggest, setSuggest] = useState(category.suggest);
+  const start = category ?? {
+    name: "",
+    description: "",
+    color: "#a88462",
+    kind: newKind,
+    parent: null,
+    keywords: [],
+    showOnDashboard: true,
+    suggest: true,
+  };
+
+  const [name, setName] = useState(start.name);
+  const [description, setDescription] = useState(start.description);
+  const [color, setColor] = useState(start.color);
+  const [kind, setKind] = useState(start.kind);
+  const [parent, setParent] = useState(start.parent ?? "");
+  const [keywords, setKeywords] = useState(start.keywords.join(", "));
+  const [showOnDashboard, setShowOnDashboard] = useState(start.showOnDashboard);
+  const [suggest, setSuggest] = useState(start.suggest);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const hasChildren = categories.some((c) => c.parent === category.slug);
-  const parents = categories.filter((c) => c.parent === null && c.slug !== category.slug);
+  const hasChildren = categories.some((c) => c.parent === category?.slug);
+  const parents = categories.filter((c) => c.parent === null && c.slug !== category?.slug);
   const hex = normalizeHex(color);
 
   const patch = {
     name: name.trim(),
     description: description.trim(),
-    color: hex ?? category.color,
+    color: hex ?? start.color,
     kind,
     parent: parent || null,
     keywords: splitKeywords(keywords),
@@ -44,14 +65,14 @@ export function CategoryEditor({ category, onClose }: { category: CategoryDef; o
     suggest,
   };
   const dirty =
-    patch.name !== category.name ||
-    patch.description !== category.description.trim() ||
-    (hex ?? "") !== category.color.toLowerCase() ||
-    (!patch.parent && kind !== category.kind) ||
-    patch.parent !== category.parent ||
-    patch.keywords.join("\n") !== category.keywords.join("\n") ||
-    showOnDashboard !== category.showOnDashboard ||
-    suggest !== category.suggest;
+    patch.name !== start.name ||
+    patch.description !== start.description.trim() ||
+    (hex ?? "") !== start.color.toLowerCase() ||
+    (!patch.parent && kind !== start.kind) ||
+    patch.parent !== start.parent ||
+    patch.keywords.join("\n") !== start.keywords.join("\n") ||
+    showOnDashboard !== start.showOnDashboard ||
+    suggest !== start.suggest;
 
   const requestClose = async () => {
     if (dirty && !(await confirmDialog({ title: "Discard your changes?", confirmLabel: "Discard", danger: true }))) return;
@@ -60,11 +81,11 @@ export function CategoryEditor({ category, onClose }: { category: CategoryDef; o
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
-    if (!dirty) return onClose();
+    if (category && !dirty) return onClose();
     if (!patch.name) return setError("A category needs a name.");
     if (!hex) return setError("Use a HEX color like #A88462.");
     setSaving(true);
-    const refused = await updateCategory(category.slug, patch);
+    const refused = category ? await updateCategory(category.slug, patch) : await addCategory(patch);
     setSaving(false);
     if (refused) setError(refused);
     else onClose();
@@ -82,7 +103,9 @@ export function CategoryEditor({ category, onClose }: { category: CategoryDef; o
         >
           <form onSubmit={(e) => void save(e)} className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-center justify-between border-b border-line px-5 py-3">
-              <Dialog.Title className="text-base font-semibold text-title">Edit {category.name}</Dialog.Title>
+              <Dialog.Title className="text-base font-semibold text-title">
+                {category ? `Edit ${category.name}` : kind === "list" && !parent ? "Add list" : "Add category"}
+              </Dialog.Title>
               <button
                 type="button"
                 aria-label="Close"
@@ -95,12 +118,14 @@ export function CategoryEditor({ category, onClose }: { category: CategoryDef; o
 
             <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
               <Field label="Name">
-                <input value={name} maxLength={60} onChange={(e) => setName(e.target.value)} className={input} />
+                <input value={name} maxLength={60} autoFocus={!category} onChange={(e) => setName(e.target.value)} className={input} />
               </Field>
 
-              <Field label="ID" hint="Fixed, because item files and links use it.">
-                <p className="font-mono text-sm text-caption">{category.slug}</p>
-              </Field>
+              {category && (
+                <Field label="ID" hint="Fixed, because item files and links use it.">
+                  <p className="font-mono text-sm text-caption">{category.slug}</p>
+                </Field>
+              )}
 
               <Field label="Description" hint="JEV reads this when suggesting categories.">
                 <textarea value={description} rows={3} onChange={(e) => setDescription(e.target.value)} className={`${input} resize-y`} />
@@ -111,7 +136,7 @@ export function CategoryEditor({ category, onClose }: { category: CategoryDef; o
                   <input
                     type="color"
                     aria-label="Color picker"
-                    value={hex ?? category.color}
+                    value={hex ?? start.color}
                     onChange={(e) => setColor(e.target.value)}
                     className="size-9 shrink-0 cursor-pointer rounded-lg border border-line bg-transparent p-0.5 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
                   />
@@ -185,7 +210,7 @@ export function CategoryEditor({ category, onClose }: { category: CategoryDef; o
                   Cancel
                 </Button>
                 <Button type="submit" size="sm" disabled={saving}>
-                  {dirty ? "Save" : "Done"}
+                  {!category ? "Add" : dirty ? "Save" : "Done"}
                 </Button>
               </div>
             </div>

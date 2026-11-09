@@ -22,6 +22,7 @@ export function ItemRow({ item, showCategories = true, hideCategory, compact = f
   const categories = useStore((s) => s.categories);
   const setStatus = useStore((s) => s.setStatus);
   const openEditor = useStore((s) => s.openEditor);
+  const updateItem = useStore((s) => s.updateItem);
 
   const badges = useMemo(
     () =>
@@ -86,11 +87,24 @@ export function ItemRow({ item, showCategories = true, hideCategory, compact = f
         )}
       </button>
 
-      {/* Pinned marker sits at the row's edge, level with the first line, so
-          titles stay aligned with the rows around them. */}
-      {item.pinned && <Pin className="mt-1 size-3.5 shrink-0 rotate-45 text-faint" aria-label="Pinned" />}
-
       <div className="flex shrink-0 gap-0.5">
+        {/* Stays visible on a pinned row, where it marks the pin and unpins on click. */}
+        {(!done || item.pinned) && (
+          <button
+            type="button"
+            onClick={() => void updateItem(item.id, { pinned: !item.pinned })}
+            className={`rounded-lg p-1 transition-opacity hover:bg-soft hover:text-title ${
+              item.pinned
+                ? "text-caption"
+                : "text-faint opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+            }`}
+            aria-label={item.pinned ? "Unpin" : "Pin"}
+            aria-pressed={item.pinned}
+            title={item.pinned ? "Unpin" : "Pin"}
+          >
+            <Pin className={`size-4 ${item.pinned ? "rotate-45 fill-current" : ""}`} />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => void copy(itemAsText({ title: item.title, text: snippet, checklist: item.checklist }))}

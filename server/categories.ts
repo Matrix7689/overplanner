@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { z } from "zod";
-import { CategoriesFileSchema, type UpdateCategorySchema } from "../shared/schemas";
+import { CategoriesFileSchema, type CreateCategorySchema, type UpdateCategorySchema } from "../shared/schemas";
 import type { CategoryDef } from "../shared/types";
 import { HttpError } from "./errors";
 import { readJsonFile, withWriteLock, writeJsonFile } from "./jsonFile";
@@ -49,6 +49,41 @@ export class CategoryRepo {
   private async save(list: CategoryDef[]): Promise<void> {
     await writeJsonFile(this.file, CategoriesFileSchema, list);
     this.setList(list);
+  }
+
+  // A slug from the name, unique and safe to use as a file name on Windows.
+  private newSlug(name: string): string {
+    const words = name
+      .normalize("NFKD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    const base = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/.test(words) ? `${words}-category` : words || "category";
+    let slug = base;
+    for (let n = 2; this.bySlug.has(slug); n++) slug = `${base}-${n}`;
+    return slug;
+  }
+
+  create(input: z.output<typeof CreateCategorySchema>): Promise<CategoryDef[]> {
+    return withWriteLock(async () => {
+      const name = input.name.toLowerCase();
+      if (this.list.some((c) => c.name.toLowerCase() === name)) {
+        throw new HttpError(400, `There is already a category called "${input.name}"`);
+      }
+
+      let kind = input.kind;
+      if (input.parent !== null) {
+        const parent = this.bySlug.get(input.parent);
+        if (!parent) throw new HttpError(400, `Unknown parent "${input.parent}"`);
+        if (parent.parent !== null) throw new HttpError(400, `"${parent.name}" is a subcategory, so it can't have subcategories`);
+        kind = parent.kind;
+      }
+
+      const order = Math.max(0, ...this.list.map((c) => c.order)) + 1;
+      await this.save([...this.list, { ...input, kind, slug: this.newSlug(input.name), icon: "", order }]);
+      return this.list;
+    });
   }
 
   // Subcategories go one level deep and always match their parent's kind.

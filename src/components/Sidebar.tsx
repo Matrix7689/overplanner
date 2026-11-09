@@ -7,17 +7,19 @@ import {
   ListChecks,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
   Search,
   Settings,
   TrendingUp,
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { NavLink } from "react-router";
 import type { CategoryDef, SidebarSection } from "../../shared/types";
 import { inboxItems, openCountBySlug, useStore } from "../store/useStore";
 import { Tooltip } from "../ui/Tooltip";
+import { CategoryEditor } from "./CategoryEditor";
 
 type Props = {
   open: boolean;
@@ -33,6 +35,7 @@ export function Sidebar({ open, onClose }: Props) {
   const folded = useStore((s) => s.settings.ui.collapsedSections);
   const toggleSidebar = useStore((s) => s.toggleSidebar);
   const toggleSection = useStore((s) => s.toggleSection);
+  const [adding, setAdding] = useState<CategoryDef["kind"] | null>(null);
 
   const counts = useMemo(() => openCountBySlug(items), [items]);
   const inboxCount = useMemo(() => inboxItems(items).length, [items]);
@@ -107,6 +110,7 @@ export function Sidebar({ open, onClose }: Props) {
                 )}
               </li>
             ))}
+            <AddRow label="Add category" compact={compact} onClick={() => setAdding("category")} />
           </Section>
 
           <Section title="Lists" id="lists" icon={ListChecks} folded={folded.includes("lists")} onToggle={toggleSection} compact={compact}>
@@ -115,6 +119,7 @@ export function Sidebar({ open, onClose }: Props) {
                 <CategoryLink category={c} count={counts[c.slug]} compact={compact} />
               </li>
             ))}
+            <AddRow label="Add list" compact={compact} onClick={() => setAdding("list")} />
           </Section>
         </nav>
 
@@ -124,6 +129,8 @@ export function Sidebar({ open, onClose }: Props) {
           </ul>
         </div>
       </aside>
+
+      {adding && <CategoryEditor newKind={adding} onClose={() => setAdding(null)} />}
     </>
   );
 }
@@ -230,6 +237,19 @@ function CategoryLink({ category, count, compact }: { category: CategoryDef; cou
         {count ? <Count value={count} compact={compact} /> : null}
       </NavLink>
     </Tooltip>
+  );
+}
+
+function AddRow({ label, compact, onClick }: { label: string; compact: boolean; onClick: () => void }) {
+  return (
+    <li>
+      <Tooltip label={label} enabled={compact}>
+        <button type="button" onClick={onClick} aria-label={label} className={`${linkClass(compact)} w-full text-caption`}>
+          <Plus className="size-4 shrink-0" />
+          <span className={`flex-1 text-left ${compact ? "md:hidden" : ""}`}>{label}</span>
+        </button>
+      </Tooltip>
+    </li>
   );
 }
 

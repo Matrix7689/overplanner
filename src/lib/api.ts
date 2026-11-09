@@ -1,6 +1,7 @@
 import type {
   BackupStatus,
   CategoryDef,
+  CreateCategoryInput,
   ClassifierStatus,
   ClassifyRequest,
   ClassifyResult,
@@ -37,6 +38,8 @@ function json(method: string, body: unknown): RequestInit {
 
 export const api = {
   categories: () => request<CategoryDef[]>("/categories"),
+
+  createCategory: (input: CreateCategoryInput) => request<CategoryDef[]>("/categories", json("POST", input)),
 
   updateCategory: (slug: string, patch: UpdateCategoryInput) =>
     request<CategoryDef[]>(`/categories/${encodeURIComponent(slug)}`, json("PATCH", patch)),

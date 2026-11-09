@@ -1,4 +1,4 @@
-import { CloudUpload, Loader2, Palette, Pencil, Plug, Sparkles, SlidersHorizontal, SunMoon, Tags, Trash2, Type, type LucideIcon } from "lucide-react";
+import { CloudUpload, Loader2, Palette, Pencil, Plug, Plus, Sparkles, SlidersHorizontal, SunMoon, Tags, Trash2, Type, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import type { CategoryDef, ClassifyResult, Theme } from "../../shared/types";
 import { useLocation, useNavigate } from "react-router";
@@ -210,6 +210,7 @@ function CategoriesSection() {
   const items = useStore((s) => s.items);
   const deleteCategory = useStore((s) => s.deleteCategory);
   const [editing, setEditing] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const editingCategory = categories.find((c) => c.slug === editing);
 
   const remove = async (c: CategoryDef) => {
@@ -235,6 +236,12 @@ function CategoriesSection() {
 
   return (
     <Section title="Categories" description="Saved in data/categories.json. Deleting a category never deletes its items.">
+      <div className="mb-4 flex justify-end">
+        <Button size="sm" onClick={() => setAdding(true)}>
+          <Plus className="size-4" />
+          Add category
+        </Button>
+      </div>
       <ul className="divide-y divide-line">
         {categories
           .filter((c) => c.parent === null)
@@ -283,6 +290,7 @@ function CategoriesSection() {
           })}
       </ul>
       {editingCategory && <CategoryEditor category={editingCategory} onClose={() => setEditing(null)} />}
+      {adding && <CategoryEditor onClose={() => setAdding(false)} />}
     </Section>
   );
 }

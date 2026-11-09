@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.0 - 2026-11-09
+
+- Add categories and lists from Settings > Categories or the sidebar
+
+## 0.18.0 - 2026-11-09
+
+- Pin or unpin a task from its row: a pin button appears on hover, beside Copy and Delete, and stays visible on pinned tasks
+
 ## 0.17.0 - 2026-11-09
 
 - Dashboard: a Pinned Tasks toggle that shows only the pinned tasks from each category
