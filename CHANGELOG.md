@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.16.0 - 2026-11-09
+
+- Results: removed Streak, and added a linked pie and bar chart of completed tasks per category. Hover to preview a category, click to keep it selected
+- Dashboard: a pie chart of open tasks per category beside four cards: Open tasks, Category with highest tasks (replacing Due today), Number of pinned tasks and In the Inbox. Hover a slice to see its count, click to open the category
+
 ## 0.15.0 - 2026-11-06
 
 - Copy to clipboard: a button in the item editor, and beside Delete when you hover over a task. It copies the title, details and checklist as plain text; the editor copies what's on screen, including unsaved edits

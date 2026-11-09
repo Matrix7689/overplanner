@@ -1,13 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { isTask } from "../../shared/types";
+import { CategoryPie, percent, type CategoryCount } from "../components/CategoryPie";
 import { PageHeader } from "../components/PageHeader";
 import { addDays, startOfWeek, toLocalISODate } from "../lib/dates";
 import { useStore } from "../store/useStore";
 
 const DAYS = 14;
 
-// Progress from done items. The definition of a streak and the final weekly
-// chart are still to be decided.
+// Progress from completed tasks.
 export function ResultsPage() {
   const items = useStore((s) => s.items);
   const categories = useStore((s) => s.categories);
@@ -30,8 +30,13 @@ export function ResultsPage() {
       return { key, label: d.toLocaleDateString(undefined, { weekday: "narrow" }), count: perDay.get(key) ?? 0 };
     });
 
-    const byCategory = categories
-      .map((c) => ({ category: c, count: done.filter((it) => it.categories.includes(c.slug)).length }))
+    const byCategory: CategoryCount[] = categories
+      .map((c) => ({
+        slug: c.slug,
+        name: c.name,
+        color: c.color,
+        count: done.filter((it) => it.categories.includes(c.slug)).length,
+      }))
       .filter((r) => r.count > 0)
       .sort((a, b) => b.count - a.count);
 
@@ -39,16 +44,14 @@ export function ResultsPage() {
   }, [items, categories]);
 
   const maxDay = Math.max(1, ...stats.days.map((d) => d.count));
-  const maxCat = Math.max(1, ...stats.byCategory.map((r) => r.count));
 
   return (
     <>
-      <PageHeader title="Results" subtitle="Progress from completed items." />
+      <PageHeader title="Results" subtitle="Progress from completed tasks." />
 
-      <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3">
+      <div className="mb-8 grid grid-cols-2 gap-3">
         <Stat label="Completed this week" value={stats.thisWeek} />
         <Stat label="Completed all time" value={stats.total} />
-        <Stat label="Streak" value="—" hint="Definition pending" />
       </div>
 
       <section className="mb-8 card-shadow rounded-2xl border border-line bg-surface p-4">
@@ -69,38 +72,79 @@ export function ResultsPage() {
       </section>
 
       <section className="card-shadow rounded-2xl border border-line bg-surface p-4">
-        <h2 className="mb-3 text-sm font-semibold text-title">By category</h2>
+        <h2 className="mb-4 text-sm font-semibold text-title">Completed tasks by category</h2>
         {stats.byCategory.length === 0 ? (
           <p className="text-sm text-faint">Nothing completed yet.</p>
         ) : (
-          <ul className="space-y-2">
-            {stats.byCategory.map(({ category, count }) => (
-              <li key={category.slug} className="flex items-center gap-3 text-sm">
-                <span className="w-40 shrink-0 truncate">
-                  {category.name}
-                </span>
-                <div className="h-2 flex-1 rounded-full bg-soft">
-                  <div
-                    className="h-2 rounded-full"
-                    style={{ width: `${(count / maxCat) * 100}%`, backgroundColor: category.color }}
-                  />
-                </div>
-                <span className="w-6 text-right tabular-nums text-caption">{count}</span>
-              </li>
-            ))}
-          </ul>
+          <CategoryCharts rows={stats.byCategory} />
         )}
       </section>
     </>
   );
 }
 
-function Stat({ label, value, hint }: { label: string; value: number | string; hint?: string }) {
+// A pie and a bar chart that share one selection: hover to preview, click to keep it.
+function CategoryCharts({ rows }: { rows: CategoryCount[] }) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<string | null>(null);
+  const activeSlug = hovered ?? pinned;
+  const active = rows.find((r) => r.slug === activeSlug);
+  const sum = rows.reduce((n, r) => n + r.count, 0);
+  const max = rows[0].count;
+  const toggle = (slug: string) => setPinned((p) => (p === slug ? null : slug));
+  const dim = (slug: string) => (activeSlug && activeSlug !== slug ? "opacity-35" : "");
+
+  return (
+    <div className="grid items-start gap-6 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
+      <div className="mx-auto w-full max-w-[260px]">
+        <CategoryPie rows={rows} activeSlug={activeSlug} onHover={setHovered} onSelect={toggle} />
+        <p className="mt-3 text-center text-sm text-caption" aria-live="polite">
+          {active ? (
+            <>
+              <span className="font-semibold text-title">{active.name}</span>: {active.count} (
+              {percent(active.count, sum)})
+            </>
+          ) : (
+            "Hover or tap a category"
+          )}
+        </p>
+      </div>
+
+      <ul className="space-y-0.5">
+        {rows.map((r) => (
+          <li key={r.slug}>
+            <button
+              type="button"
+              aria-pressed={pinned === r.slug}
+              aria-label={`${r.name}: ${r.count} completed, ${percent(r.count, sum)}`}
+              className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-1.5 py-1 text-left text-sm transition-opacity hover:bg-soft ${dim(r.slug)}`}
+              onMouseEnter={() => setHovered(r.slug)}
+              onMouseLeave={() => setHovered(null)}
+              onFocus={() => setHovered(r.slug)}
+              onBlur={() => setHovered(null)}
+              onClick={() => toggle(r.slug)}
+            >
+              <span className="w-28 shrink-0 truncate sm:w-40">{r.name}</span>
+              <span className="h-3 min-w-0 flex-1 rounded-full bg-soft">
+                <span
+                  className="block h-3 rounded-full"
+                  style={{ width: `${(r.count / max) * 100}%`, backgroundColor: r.color }}
+                />
+              </span>
+              <span className="w-8 text-right tabular-nums text-caption">{r.count}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="card-shadow rounded-2xl border border-line bg-surface p-4">
       <p className="text-xs text-caption">{label}</p>
       <p className="mt-1 text-2xl font-bold tracking-tight text-title">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-faint">{hint}</p>}
     </div>
   );
 }

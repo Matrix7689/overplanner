@@ -1,12 +1,12 @@
-import { CalendarClock, Inbox, ListTodo, StickyNote } from "lucide-react";
+import { Inbox, ListTodo, Pin, StickyNote, Trophy } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { isNote, isTask, type CategoryDef, type Item } from "../../shared/types";
+import { CategoryPie, percent, type CategoryCount } from "../components/CategoryPie";
 import { ItemList } from "../components/ItemRow";
 import { PageHeader } from "../components/PageHeader";
 import { QuickAdd } from "../components/QuickAdd";
 import { SortableCardGrid } from "../components/SortableCardGrid";
-import { todayISO } from "../lib/dates";
 import { inboxItems, inCategories, useStore, withDescendants } from "../store/useStore";
 
 const LANE_LIMIT = 5;
@@ -53,29 +53,43 @@ export function DashboardPage() {
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   const stats = useMemo(() => {
-    const today = todayISO();
     const open = items.filter(isTask).filter((it) => it.status === "open");
     return {
       open: open.length,
-      dueToday: open.filter((it) => it.dueDate === today).length,
-      overdue: open.filter((it) => it.dueDate !== null && it.dueDate < today).length,
+      pinned: open.filter((it) => it.pinned).length,
       inbox: inboxItems(items).length,
     };
   }, [items]);
+
+  const openByCategory = useMemo<CategoryCount[]>(() => {
+    const open = items.filter(isTask).filter((it) => it.status === "open");
+    return categories
+      .map((c) => ({
+        slug: c.slug,
+        name: c.name,
+        color: c.color,
+        count: open.filter((it) => it.categories.includes(c.slug)).length,
+      }))
+      .filter((r) => r.count > 0)
+      .sort((a, b) => b.count - a.count);
+  }, [categories, items]);
+  const topCategory = openByCategory[0];
 
   return (
     <>
       <PageHeader eyebrow={date} title={greeting} />
 
-      <section className="mb-6 grid grid-cols-3 gap-3">
+      <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(2,minmax(0,1fr))] lg:grid-rows-2">
+        {openByCategory.length > 0 && <OpenTasksPie rows={openByCategory} />}
         <Stat to="/search?kind=task&status=open" icon={<ListTodo className="size-4" />} label="Open tasks" value={stats.open} />
         <Stat
-          to="/calendar"
-          icon={<CalendarClock className="size-4" />}
-          label={stats.overdue > 0 ? `Due today · ${stats.overdue} overdue` : "Due today"}
-          value={stats.dueToday}
-          alert={stats.overdue > 0}
+          to={topCategory ? `/category/${topCategory.slug}` : "/search?kind=task&status=open"}
+          icon={<Trophy className="size-4" />}
+          label="Category with highest tasks"
+          value={topCategory?.count ?? 0}
+          detail={topCategory?.name ?? "None yet"}
         />
+        <Stat icon={<Pin className="size-4" />} label="Number of pinned tasks" value={stats.pinned} />
         <Stat to="/inbox" icon={<Inbox className="size-4" />} label="In the Inbox" value={stats.inbox} />
       </section>
 
@@ -130,18 +144,69 @@ export function DashboardPage() {
   );
 }
 
-function Stat({ to, icon, label, value, alert }: { to: string; icon: ReactNode; label: string; value: number; alert?: boolean }) {
+// Hover a slice to see its count; click one to open that category.
+function OpenTasksPie({ rows }: { rows: CategoryCount[] }) {
+  const navigate = useNavigate();
+  const [hovered, setHovered] = useState<string | null>(null);
+  const active = rows.find((r) => r.slug === hovered);
+  const sum = rows.reduce((n, r) => n + r.count, 0);
+
   return (
-    <Link
-      to={to}
-      className="card-shadow group flex min-w-0 flex-col justify-between gap-1 rounded-2xl border border-line bg-surface px-3 py-3 sm:px-4 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/50"
-    >
-      <span className={`flex items-center gap-1.5 text-xs font-medium ${alert ? "text-danger" : "text-caption"}`}>
+    <div className="card-shadow col-span-2 flex min-w-0 items-center gap-4 rounded-2xl border border-line bg-surface p-3 lg:col-span-1 lg:row-span-2">
+      <div className="w-40 shrink-0 lg:w-48">
+        <CategoryPie
+          rows={rows}
+          activeSlug={hovered}
+          onHover={setHovered}
+          onSelect={(slug) => navigate(`/category/${slug}`)}
+        />
+      </div>
+      <div className="min-w-0 flex-1 text-xs text-caption" aria-live="polite">
+        {active ? (
+          <>
+            <p className="truncate text-sm font-semibold text-title">{active.name}</p>
+            <p className="tabular-nums">
+              {active.count} open ({percent(active.count, sum)})
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-semibold leading-tight text-title">Open tasks by category</p>
+            <p className="mt-0.5 leading-tight">Hover a slice, click to open</p>
+          </>
+        )}
+      </div>
+      <ul className="sr-only">
+        {rows.map((r) => (
+          <li key={r.slug}>
+            {r.name}: {r.count}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Stat({ to, icon, label, value, detail }: { to?: string; icon: ReactNode; label: string; value: number; detail?: string }) {
+  const card = "card-shadow group flex min-w-0 flex-col justify-between gap-1 rounded-2xl border border-line bg-surface px-3 py-3 sm:px-4";
+  const content = (
+    <>
+      <span className="flex items-center gap-1.5 text-xs font-medium text-caption">
         <span className="hidden shrink-0 sm:inline">{icon}</span>
         <span className="min-w-0 leading-tight">{label}</span>
       </span>
-      <span className="text-2xl font-bold tracking-tight text-title">{value}</span>
+      <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+        <span className="text-2xl font-bold tracking-tight text-title">{value}</span>
+        {detail && <span className="max-w-full truncate text-sm font-semibold text-body" title={detail}>{detail}</span>}
+      </span>
+    </>
+  );
+  return to ? (
+    <Link to={to} className={`${card} transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/50`}>
+      {content}
     </Link>
+  ) : (
+    <div className={card}>{content}</div>
   );
 }
 
