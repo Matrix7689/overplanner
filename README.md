@@ -6,11 +6,48 @@ A self-hosted task and notes app, built as an alternative to Google Keep. It run
 
 ### Web app
 
-Coming soon...
+![Dashboard](docs/Screenshot_4.png)
 
 ### Mobile app
 
-Coming soon...
+<img src="docs/Screenshot_11.png" alt="Phone capture app" width="260">
+
+<details>
+<summary><strong>View more screenshots</strong></summary>
+
+#### Task editor
+
+![Task editor](docs/Screenshot_9.png)
+
+#### Category page
+
+![Category page with tasks and notes](docs/Screenshot_1.png)
+
+#### Calendar
+
+![Calendar](docs/Screenshot_8.png)
+
+#### Results
+
+![Results](docs/Screenshot_7.png)
+
+#### Search
+
+![Search](docs/Screenshot_6.png)
+
+#### Inbox
+
+![Inbox](docs/Screenshot_5.png)
+
+#### Lists
+
+![Watch List](docs/Screenshot_10.png)
+
+#### Settings
+
+![Settings](docs/Screenshot_3.png)
+
+</details>
 
 ## Features
 

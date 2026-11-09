@@ -12,6 +12,10 @@ logs
 # categories from defaults/categories.json, and everything in it stays local.
 data/
 
+# Local demo data and the script that generates it.
+demo-data/
+scripts/seed-demo.ts
+
 # Exports and the files made while importing them (docs/IMPORTING.md).
 exports/
 Takeout*/
