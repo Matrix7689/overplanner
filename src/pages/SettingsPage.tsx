@@ -69,7 +69,7 @@ export function SettingsPage() {
 
         <Section
           title="Theme colors"
-          description="Type HEX codes or click a swatch. The previews update as you go, and Apply changes the whole app. The phone capture app keeps the default colors."
+          description="Pick a preset or type your own HEX codes. The previews update as you go, and Apply changes the whole app. The phone capture app keeps the default colors."
         >
           <PaletteEditor />
         </Section>

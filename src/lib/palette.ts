@@ -11,13 +11,51 @@ export const DEFAULT_PALETTE: Palette = {
   neutral: "#4a4a46",
 };
 
-export const PALETTE_SLOTS: { key: PaletteKey; label: string; hint: string }[] = [
-  { key: "darkest", label: "Darkest", hint: "Dark mode page, light mode headings" },
-  { key: "dark", label: "Dark", hint: "Sidebar, dark mode cards, light mode text" },
-  { key: "mid", label: "Mid", hint: "Light mode buttons and links" },
-  { key: "accent", label: "Accent", hint: "Dark mode sliders and checkboxes" },
-  { key: "light", label: "Light", hint: "Light mode borders, dark mode text" },
-  { key: "neutral", label: "Neutral", hint: "Light mode secondary text" },
+// Ready-made themes. Mocha is the default, so choosing it clears the saved
+// palette. The four colour designs were given as roles or as a plain dark to
+// light list, so each was fitted to the six slots below: a role with no slot
+// of its own (Orange's Secondary, say) isn't a separate colour here, and where
+// a design had too few dark shades, the missing one is a nearby blend. Each is
+// checked with contrastIssues, which reports none for any of them.
+export const PRESETS: { id: string; name: string; palette: Palette }[] = [
+  { id: "mocha", name: "Mocha", palette: DEFAULT_PALETTE },
+  {
+    id: "orange",
+    name: "Orange",
+    palette: { darkest: "#1f1d2b", dark: "#2e2b40", mid: "#b34f00", accent: "#ff7a00", light: "#ffe4c7", neutral: "#5a5670" },
+  },
+  {
+    id: "teal",
+    name: "Teal",
+    palette: { darkest: "#0b3d3b", dark: "#124f4c", mid: "#0f766e", accent: "#14b8a6", light: "#e6fffb", neutral: "#3f5f5d" },
+  },
+  {
+    id: "ocean",
+    name: "Deep Ocean",
+    palette: { darkest: "#05161a", dark: "#072e33", mid: "#0c7075", accent: "#0f969c", light: "#6da5c0", neutral: "#294d61" },
+  },
+  {
+    id: "forest",
+    name: "Forest",
+    palette: { darkest: "#051f20", dark: "#0b2b26", mid: "#235347", accent: "#8eb69b", light: "#daf1de", neutral: "#163832" },
+  },
+];
+
+// The preset whose six colours match, if any; otherwise the palette is custom.
+export function presetFor(palette: Palette) {
+  return PRESETS.find((p) => samePalette(p.palette, palette));
+}
+
+// What each colour does in each mode. The names describe how dark a colour is,
+// not its job, and most colours swap jobs between the two modes. The sidebar
+// is dark in both: it runs from Dark to Darkest.
+export const PALETTE_SLOTS: { key: PaletteKey; label: string; light: string; dark: string }[] = [
+  { key: "darkest", label: "Darkest", light: "Headings and titles", dark: "Page background" },
+  { key: "dark", label: "Dark", light: "Body text, button edges", dark: "Card background" },
+  { key: "mid", label: "Mid", light: "Links and buttons", dark: "Card borders" },
+  { key: "accent", label: "Accent", light: "Icons and highlights", dark: "Buttons, checkboxes, sliders" },
+  { key: "light", label: "Light", light: "Borders, page and card backgrounds", dark: "Text, links and buttons" },
+  { key: "neutral", label: "Neutral", light: "Secondary text", dark: "Not used" },
 ];
 
 // Accepts "A88462", "#a88462" or "#a84"; returns "#a88462", or null if invalid.

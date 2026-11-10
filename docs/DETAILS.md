@@ -67,7 +67,7 @@ All data is in `data/`:
 - `categories.json` your categories and lists. Created on first run from [defaults/categories.json](../defaults/categories.json), then yours to change in Settings
 - `categories/<slug>.json` items, one file per category or list. An item with several categories is stored once, in the file of its first category
 - `inbox.json` items with no category
-- `settings.json` thresholds, backup path, UI preferences (`ui.theme`: `system`, `light` or `dark`; `ui.font`; `ui.customPalette`: six HEX colors, or `null` for the defaults; `ui.sidebarCollapsed`; `ui.collapsedSections`; `ui.dashboardOrder`)
+- `settings.json` thresholds, backup path, UI preferences (`ui.theme`: `system`, `light` or `dark`; `ui.font`; `ui.customPalette`: six HEX colors, or `null` for the Mocha preset (the default; the others are in `src/lib/palette.ts`); `ui.sidebarCollapsed`; `ui.collapsedSections`; `ui.dashboardOrder`)
 - `feedback.json` classification corrections
 - `backup.json` outcome of the last backups
 

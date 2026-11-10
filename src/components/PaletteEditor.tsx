@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Palette } from "../../shared/types";
-import { contrastIssues, DEFAULT_PALETTE, normalizeHex, PALETTE_SLOTS, paletteVars, samePalette, type PaletteKey } from "../lib/palette";
+import {
+  contrastIssues,
+  DEFAULT_PALETTE,
+  normalizeHex,
+  PALETTE_SLOTS,
+  paletteVars,
+  presetFor,
+  PRESETS,
+  samePalette,
+  type PaletteKey,
+} from "../lib/palette";
 import { useStore } from "../store/useStore";
 import { Button } from "../ui/Button";
 import { Checkbox } from "../ui/Checkbox";
@@ -29,6 +39,9 @@ export function PaletteEditor() {
   );
   const issues = useMemo(() => contrastIssues(preview), [preview]);
   const changed = allValid && !samePalette(preview, current);
+  const appliedName = presetFor(current)?.name ?? "Custom";
+  // With a half-typed colour the draft matches nothing, so no preset is marked.
+  const chosen = allValid ? presetFor(preview) : undefined;
 
   const apply = () => {
     updateSettings({ ui: { customPalette: samePalette(preview, DEFAULT_PALETTE) ? null : preview } });
@@ -37,8 +50,35 @@ export function PaletteEditor() {
 
   return (
     <div className="space-y-4">
+      <div>
+        <p className="mb-2 text-xs font-medium text-caption">
+          Presets <span className="font-normal text-faint">· In use: {appliedName}</span>
+        </p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+          {PRESETS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              aria-pressed={chosen?.id === p.id}
+              onClick={() => setDraft(p.palette)}
+              className={`rounded-xl border p-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                chosen?.id === p.id ? "border-accent bg-soft" : "border-line hover:bg-soft"
+              }`}
+            >
+              <span className="flex overflow-hidden rounded-md" aria-hidden>
+                {PALETTE_SLOTS.map(({ key }) => (
+                  <span key={key} className="h-5 flex-1" style={{ backgroundColor: p.palette[key] }} />
+                ))}
+              </span>
+              <span className="mt-1.5 block text-sm font-medium text-title">{p.name}</span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-1.5 text-xs text-faint">Pick one to preview it, then change any color below if you like. Apply saves it.</p>
+      </div>
+
       <div className="grid gap-x-6 gap-y-3 xl:grid-cols-2">
-        {PALETTE_SLOTS.map(({ key, label, hint }) => {
+        {PALETTE_SLOTS.map(({ key, label, light, dark }) => {
           const invalid = normalizeHex(draft[key]) === null;
           return (
             <div key={key} className="flex items-center gap-3">
@@ -51,7 +91,12 @@ export function PaletteEditor() {
               />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-title">{label}</p>
-                <p className="text-xs leading-tight text-caption">{hint}</p>
+                <p className="text-xs leading-tight text-caption">
+                  <span className="font-medium text-body">Light mode:</span> {light}
+                </p>
+                <p className="text-xs leading-tight text-caption">
+                  <span className="font-medium text-body">Dark mode:</span> {dark}
+                </p>
               </div>
               <input
                 type="text"
@@ -71,6 +116,8 @@ export function PaletteEditor() {
           );
         })}
       </div>
+
+      <p className="text-xs text-faint">The sidebar is dark in both modes, running from Dark to Darkest. In-between shades are blended from these six.</p>
 
       {!allValid && <p className="text-xs text-danger">Use a HEX code like #A88462 for each color.</p>}
 
@@ -100,7 +147,7 @@ export function PaletteEditor() {
           onClick={() => setDraft(DEFAULT_PALETTE)}
           disabled={allValid && samePalette(preview, DEFAULT_PALETTE)}
         >
-          Reset to defaults
+          Reset to Mocha
         </Button>
       </div>
     </div>

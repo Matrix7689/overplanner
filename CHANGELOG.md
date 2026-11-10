@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.21.0 - 2026-11-10
+
+- Theme presets: your current colors are now the "Mocha" preset, joined by Orange, Teal, Deep Ocean and Forest. Pick one to preview it, adjust any of its colors, then Apply
+
+## 0.20.0 - 2026-11-10
+
+- Settings > Theme colors: each color now says what it does in light mode and in dark mode, since most swap jobs between the two
+
 ## 0.19.0 - 2026-11-09
 
 - Add categories and lists from Settings > Categories or the sidebar
